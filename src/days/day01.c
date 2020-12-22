@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include "../aoc.h"
 #include "../utils/intarraylist.h"
 
 

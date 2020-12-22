@@ -8,6 +8,9 @@ IntArrayList* IntArrayList__new(uint32_t initial_size)
     IntArrayList* p = (IntArrayList*) malloc(sizeof(IntArrayList));
     int32_t* values = (int32_t*) malloc(sizeof(int32_t) * initial_size);
 
+    PANIC_IF_NULL(p, "Unable to create IntArrayList with initial_size %d", initial_size);
+    PANIC_IF_NULL(values, "Unable to create IntArrayList with initial_size %d", initial_size);
+
     p->values = values;
     p->size = initial_size;
     p->length = 0;
@@ -46,8 +49,8 @@ void ial_append(IntArrayList* arl, int32_t value)
         // Resize the array
         int32_t old_size = arl->size;
         int32_t new_size = old_size * 2;
-        printf("Resizing an array from %d -> %d\n", old_size, new_size);
         int32_t* new_array = (int32_t*) malloc(sizeof(int32_t) * new_size);
+        PANIC_IF_NULL("Unable to resize IntArrayList from %d to %d", old_size, new_size);
 
         memcpy(new_array, arl->values, sizeof(int32_t) * old_size);
         free(arl->values);

@@ -15,6 +15,9 @@ typedef struct {
 IntArrayList* IntArrayList__new(uint32_t initial_size);
 void IntArrayList__del(IntArrayList* arl);
 
+// Iterator
+#define IntArrayList__iter(array, i, v) (uint32_t i = 0; (i < array->length ? v = ial_get(array, i), true : false); i++)
+
 // Public Instance Methods - these all borrow the list
 
 bool ial_in(IntArrayList* arl, uint32_t index); // Checks if a particular index is valid.
