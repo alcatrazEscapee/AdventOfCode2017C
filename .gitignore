@@ -8,4 +8,6 @@
 !/Makefile
 
 !/src/**/*.c
+!/src/**/*.h
+!/inputs/*.txt
 
