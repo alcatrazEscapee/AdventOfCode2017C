@@ -1,5 +1,4 @@
-#include "../aoc.h"
-#include "../collections/arrayhashmap.h"
+#include "aoc.h"
 
 #define INPUT 277678
 #define DEBUG false

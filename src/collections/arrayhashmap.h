@@ -5,13 +5,18 @@
 #ifndef ARRAY_HASH_MAP_H
 #define ARRAY_HASH_MAP_H
 
-#include "../std.h"
-#include "../class.h"
-#include "../utils.h"
+#include <stdio.h> // printf, etc.
+#include <stdlib.h> // malloc, free
+#include <stdint.h> // int32_t, etc.
+#include <stdbool.h> // true, false, bool
+#include <string.h> // memcpy
 
 struct ArrayHashMapEntry__struct;
 struct ArrayHashMap__struct;
 
+#include "../class.h"
+#include "../utils.h"
+#include "../panic.h"
 
 typedef struct ArrayHashMapEntry__struct {
     uint32_t index;
@@ -23,7 +28,7 @@ typedef struct ArrayHashMapEntry__struct {
 
 typedef struct ArrayHashMap__struct {
     struct ArrayHashMapEntry__struct ** array; // Backing array
-    uint32_t size; // The length of the backing array
+    uint32_t size; // The length of the backing array. Must be a power of 2
     Class* key_class; // The key class
     Class* value_class; // The value class
     /* public readonly */ uint32_t length; // The number of entries

@@ -18,6 +18,11 @@ uint32_t Int32__hash(int32_t* p) // Hash
     return (uint32_t) *p;
 }
 
+String* Int32__format(int32_t* p) // Format
+{
+    return str_format("%d", *p);
+}
+
 // Int64 / int64_t*
 
 DERIVE_CLASS(Int64); // Class
@@ -34,4 +39,9 @@ int64_t* constructor(Int64)(int64_t value)
 uint32_t Int64__hash(int64_t* p) // Hash
 {
     return (uint32_t) ((*p >> 32) ^ *p);
+}
+
+String* Int64__format(int64_t* p) // Format
+{
+    return str_format("%l", *p);
 }

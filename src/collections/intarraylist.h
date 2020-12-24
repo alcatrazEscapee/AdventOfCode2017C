@@ -3,8 +3,11 @@
 #ifndef INT_ARRAY_LIST_H
 #define INT_ARRAY_LIST_H
 
-#include "../std.h"
-#include "../panic.h"
+#include <stdio.h> // printf, etc.
+#include <stdlib.h> // malloc, free
+#include <stdint.h> // int32_t, etc.
+#include <stdbool.h> // true, false, bool
+#include <string.h> // memcpy
 
 struct IntArrayList__struct;
 
@@ -14,11 +17,16 @@ typedef struct IntArrayList__struct {
     /* public readonly */ uint32_t length; // Size of filled elements
 } IntArrayList;
 
+#include "../class.h"
+#include "../utils.h"
+#include "../panic.h"
+
 // Constructor / Destructor
 IntArrayList* IntArrayList__new(uint32_t initial_size);
 void IntArrayList__del(IntArrayList* arl);
 
 // Iterator
+// Leaks the value outside the iterator scope
 #define IntArrayList__iter(array, i, v) int32_t v = 0; for (uint32_t i = 0; (i < array->length ? v = ial_get(array, i), true : false); i++)
 
 // Public Instance Methods - these all borrow the list

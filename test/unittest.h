@@ -23,9 +23,9 @@
 #ifndef UNITTEST_H
 #define UNITTEST_H
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <stdio.h> // printf, etc.
+#include <stdint.h> // int32_t, etc.
+#include <stdbool.h> // true, false, bool
 
 extern uint32_t __failed_tests;
 extern uint32_t __passed_tests;

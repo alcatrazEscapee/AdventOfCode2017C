@@ -3,14 +3,24 @@
 #ifndef AOC_H
 #define AOC_H
 
-#include "collections/arrayhashmap.h"
-#include "collections/intarraylist.h"
-#include "math/integer.h"
-#include "math/vectors.h"
-#include "class.h"
-#include "panic.h"
-#include "std.h"
-#include "utils.h"
+#include <stdio.h> // printf, etc.
+#include <stdlib.h> // malloc, free
+#include <stdint.h> // int32_t, etc.
+#include <stdbool.h> // true, false, bool
+#include <stdarg.h> // Varargs
+
+#include <string.h> // memcpy
+#include <ctype.h> // isdigit
+#include <limits.h> // INT_MAX, INT_MIN
+
+// Required library elements
+#include "../panic.h"
+
+// Collections
+#include "../collections/arrayhashmap.h"
+#include "../collections/intarraylist.h"
+#include "../math/integer.h"
+#include "../math/vectors.h"
 
 // Utils for consistient answers
 #define ANSWER_INT(day, part, expected, actual) printf("Day %02d Part %d: Expected %d, Actual %d, Status = %s\n", day, part, expected, actual, ((expected) == (actual)) ? "Passed" : "Failed");

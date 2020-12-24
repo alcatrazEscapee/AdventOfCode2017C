@@ -4,7 +4,7 @@
 #ifndef PANIC_H
 #define PANIC_H
 
-#include "std.h"
+#include <stdio.h> // printf
 
 #define PANIC(args...) do { printf("PANIC!\n"); printf(args); exit(1); } while (0)
 #define PANIC_IF_NULL(value, args...) do { if (value == NULL) { printf("PANIC! %s is NULL!\n", #value); printf(args); exit(1); }} while (0)

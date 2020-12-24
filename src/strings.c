@@ -1,0 +1,239 @@
+#include "strings.h"
+
+// Static Methods - String Formatting
+
+String* str_format(char* format_string, ...)
+{
+    va_list arg;
+    
+    va_start(arg, format_string);
+    uint32_t length = vsnprintf(NULL, 0, format_string, arg);
+    va_end(arg);
+
+    String* string = str_create_with_length(length);
+
+    va_start(arg, format_string);
+    vsnprintf(string->slice, length + 1, format_string, arg);
+    va_end(arg);
+
+    string->length = length;
+    return string;
+}
+
+String* str_create_with_length(uint32_t initial_length)
+{
+    uint32_t initial_size = initial_length + 1; // Plus one for the null terminator
+    String* string = (String*) malloc(sizeof(String));
+    char* slice = (char*) malloc(sizeof(char) * initial_size);
+
+    PANIC_IF_NULL(string, "Unable to create string with size %d, length %d at str_create_with_length(uint32_t)", initial_size, initial_length);
+    PANIC_IF_NULL(slice, "Unable to create string backing arra with size %d, length %d at str_create_with_length(uint32_t)", initial_size, initial_length);
+
+    string->slice = slice;
+    string->size = initial_size;
+    string->length = 0;
+
+    return string;
+}
+
+// strlen is ungodly complicated for no good reason
+uint32_t str_slice_len(char* slice)
+{
+    uint32_t length = 0;
+    while (slice[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+
+
+DERIVE_CLASS(String); // Class
+
+String* constructor(String)(char* initial_value) // Constructor
+{
+    uint32_t initial_length = str_slice_len(initial_value);
+    uint32_t initial_size = next_highest_power_of_two(initial_length + 1); // Plus one for the null terminator
+    String* string = (String*) malloc(sizeof(String));
+    char* slice = (char*) malloc(sizeof(char) * initial_size);
+
+    PANIC_IF_NULL(string, "Unable to create string from %s with size %d, length %d", initial_value, initial_size, initial_length);
+    PANIC_IF_NULL(slice, "Unable to create string backing array from %s with size %d, length %d", initial_value, initial_size, initial_length);
+
+    string->slice = slice;
+    string->size = initial_size;
+    string->length = initial_length;
+
+    memcpy(string->slice, initial_value, sizeof(char) * initial_length);
+    string->slice[initial_length] = '\0'; // Pad the last character with null
+
+    return string;
+}
+
+void String__del(String* string) // Destructor
+{
+    free(string->slice);
+    free(string);
+}
+
+String* String__copy(String* old) // Copy
+{
+    return new(String, old->slice);
+}
+
+bool String__equals(String* left, String* right) // Equals
+{
+    if (left->length != right->length)
+    {
+        return false;
+    }
+    uint32_t length = left->length;
+    for (uint32_t i = 0; i < length; i++)
+    {
+        if (left->slice[i] != right->slice[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Represents an ASCII code ordering
+int32_t String__compare(String* left, String* right) // Compare
+{
+    uint32_t length = min(left->length, right->length);
+    for (uint32_t i = 0; i < length; i++)
+    {
+        if (left->slice[i] < right->slice[i])
+        {
+            return -1;
+        }
+        else if (left->slice[i] > right->slice[i])
+        {
+            return 1;
+        }
+    }
+    // Longer strings are bigger
+    if (left->length > right->length)
+    {
+        return 1;
+    }
+    else if (left->length < right->length)
+    {
+        return -1;
+    }
+    else
+    {
+        return 0; // Strings must be equal
+    }
+}
+
+uint32_t String__hash(String* instance) // Hash
+{
+    uint32_t h = 0;
+    iter(String, instance, i, c)
+    {
+        h = (h * 31) + (uint32_t) c;
+    }
+    return h;
+}
+
+String* String__format(String* instance) // Format
+{
+    // By specification of the Format trait, this must transfer ownership of the returned string to the caller
+    // In addition, it must also borrow the provided string non-destructively.
+    // Thus, in order to satisfy both constraints, we have to use copy() here, rather than returning the instance;
+    return copy(String, instance);
+}
+
+void str_append_char(String* string, char c)
+{
+    str_ensure_length(&string, string->length + 1);
+    string->slice[string->length] = c;
+    string->slice[string->length + 1] = '\0';
+    string->length += 1;
+}
+
+void str_append_slice(String* string, char* text)
+{
+    uint32_t text_length = str_slice_len(text);
+    str_ensure_length(&string, string->length + text_length + 1);
+    for (uint32_t i = 0; i < text_length; i++)
+    {
+        string->slice[string->length + i] = text[i];
+    }
+    string->slice[string->length + text_length] = '\0';
+    string->length += text_length;
+}
+
+void str_append_string(String* string, String* other)
+{
+    str_ensure_length(&string, string->length + other->length + 1);
+    for (uint32_t i = 0; i < other->length; i++)
+    {
+        string->slice[string->length + i] = other->slice[i];
+    }
+    string->slice[string->length + other->length] = '\0';
+    string->length += other->length;
+    del(String, other);
+}
+
+bool str_in(String* string, uint32_t index)
+{
+    return index < string->length;
+}
+
+char str_get_char(String* string, uint32_t index)
+{
+    if (!str_in(string, index)) PANIC("String index out of bounds: %d in {slice='%s', size=%d, length=%d} at str_get_char(String*, uint32_t)", index, string->slice, string->size, string->length);
+    return string->slice[index];
+}
+
+void str_set_char(String* string, uint32_t index, char c)
+{
+    if (!str_in(string, index)) PANIC("String index out of bounds: %d in {slice='%s', size=%d, length=%d} at str_set_char(String*, uint32_t)", index, string->slice, string->size, string->length);
+    string->slice[index] = c;
+}
+
+bool str_equals_content(String* string, char* static_string)
+{
+    iter(String, string, i, c)
+    {
+        if (static_string[i] == '\0')
+        {
+            // Reached the end of the static string before string
+            return false;
+        }
+        else if (string->slice[i] != static_string[i])
+        {
+            // Not equal at position i
+            return false;
+        }
+    }
+    // Reached the end of string. Check if static_string has also ended
+    if (static_string[string->length] == '\0')
+    {
+        return true;
+    }
+    return false;
+}
+
+// Private Methods
+
+void str_ensure_length(String** string, uint32_t required_length)
+{
+    uint32_t required_size = required_length + 1;
+    if (required_size > (*string)->size)
+    {
+        // Resize the string
+        uint32_t new_size = next_highest_power_of_two(required_size);
+        char* new_slice = (char*) malloc(sizeof(char) * required_size);
+
+        PANIC_IF_NULL(new_slice, "Unable to extend string from length %d / size %d to length %d / size %d", (*string)->length, (*string)->size, required_length, required_size);
+
+        memcpy(new_slice, (*string)->slice, sizeof(char) * (1 + (*string)->length)); // Copy the existing string to the new slice
+        free((*string)->slice); // Free the old slice
+        (*string)->slice = new_slice; // Point the string at the new slice
+        (*string)->size = new_size; // Update the size of the string
+    }
+}

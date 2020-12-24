@@ -5,7 +5,13 @@
 #ifndef INTEGER_H
 #define INTEGER_H
 
+#include <stdio.h> // printf, etc.
+#include <stdlib.h> // malloc, free
+#include <stdint.h> // int32_t, etc.
+#include <stdbool.h> // true, false, bool
+
 #include "../class.h"
+#include "../strings.h"
 
 int32_t* constructor(Int32)(int32_t value);
 DERIVE_CLASS_HEADER(Int32, int32_t*);

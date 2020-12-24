@@ -1,4 +1,4 @@
-// Tests for math/integer
+// Tests for math/integer.c, math/integer.h
 
 #include "../../src/math/integer.h"
 

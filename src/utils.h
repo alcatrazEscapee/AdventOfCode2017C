@@ -3,7 +3,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "std.h"
+#include <stdint.h> // int32_t, etc.
+#include <stdbool.h> // true, false, bool
 
 #define abs(x) ((x) < 0 ? -(x) : (x))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
