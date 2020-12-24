@@ -50,7 +50,7 @@ void ial_append(IntArrayList* arl, int32_t value)
         int32_t old_size = arl->size;
         int32_t new_size = old_size * 2;
         int32_t* new_array = (int32_t*) malloc(sizeof(int32_t) * new_size);
-        PANIC_IF_NULL("Unable to resize IntArrayList from %d to %d", old_size, new_size);
+        PANIC_IF_NULL(new_array, "Unable to resize IntArrayList from %d to %d", old_size, new_size);
 
         memcpy(new_array, arl->values, sizeof(int32_t) * old_size);
         free(arl->values);

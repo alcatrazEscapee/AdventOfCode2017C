@@ -9,5 +9,7 @@
 
 !/src/**/*.c
 !/src/**/*.h
+!/test/**/*.c
+!/test/**/*.h
 !/inputs/*.txt
 

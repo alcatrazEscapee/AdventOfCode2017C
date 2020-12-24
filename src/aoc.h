@@ -3,36 +3,28 @@
 #ifndef AOC_H
 #define AOC_H
 
-#include <stdio.h> // printf, etc.
-#include <stdlib.h> // malloc, free
-#include <stdint.h> // int32_t, etc.
-#include <stdbool.h> // true, false, bool
-#include <string.h> // memcpy
-#include <ctype.h> // isdigit
-#include <limits.h> // INT_MAX, INT_MIN
-
-// If this happens, there's a bug in your code
-#define PANIC(args...) { printf("PANIC!\n"); printf(args); exit(1); }
-#define PANIC_IF_NULL(value, args...) { if (value == NULL) { PANIC(args); }}
+#include "collections/arrayhashmap.h"
+#include "collections/intarraylist.h"
+#include "math/integer.h"
+#include "math/vectors.h"
+#include "class.h"
+#include "panic.h"
+#include "std.h"
+#include "utils.h"
 
 // Utils for consistient answers
 #define ANSWER_INT(day, part, expected, actual) printf("Day %02d Part %d: Expected %d, Actual %d, Status = %s\n", day, part, expected, actual, ((expected) == (actual)) ? "Passed" : "Failed");
-
-// We like new language features
-#define new(class, args...) class ## __new(args)
-#define del(class, instance) class ## __del(instance)
-#define iter(class, args...) class ## __iter(args)
+#define ANSWER_UINT(day, part, expected, actual) printf("Day %02d Part %d: Expected %u, Actual %u, Status = %s\n", day, part, expected, actual, ((expected) == (actual)) ? "Passed" : "Failed")
 
 // Iterator macros
 // These are intended to be used as for iter(name, ...) { ... }
 
-// Iterates through lines (separated by newline) in a file. The inner block has access to a char* line
-// Use with iter(file_lines, ...)
-#define file_lines__iter(file, line) (char* line = NULL; read_line(file, &line);)
+#define file_lines__iter(file, line) for (char* line = NULL; read_line(file, &line);)
+#define file_chars__iter(file, c) for (int32_t c = '\0'; (c = fgetc(file)) != EOF;)
 
 // Iterates through strings, seperated by a specific token, in a parent string. The inner block has access to a char* token
 // Use with iter(string_split, ...)
-#define string_split__iter(string, split, token) (char* token = strtok(string, split); token != NULL; token = strtok(NULL, split))
+#define string_split__iter(string, split, token) for (char* token = strtok(string, split); token != NULL; token = strtok(NULL, split))
 
 // Reads a single line from a file, not including the new line character
 // If the passed in char** line is not NULL, it will be updated (possibly reallocated)

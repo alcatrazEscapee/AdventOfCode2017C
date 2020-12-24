@@ -1,5 +1,4 @@
 #include "../aoc.h"
-#include "../utils/intarraylist.h"
 
 int main(void)
 {
@@ -9,9 +8,9 @@ int main(void)
     IntArrayList* array = new(IntArrayList, 10);
 
     int part1 = 0, part2 = 0;
-    for iter(file_lines, file, line)
+    iter(file_lines, file, line)
     {
-        for iter(string_split, line, "\t", value)
+        iter(string_split, line, "\t", value)
         {
             int e = 0;
             sscanf(value, "%d", &e);
@@ -19,20 +18,18 @@ int main(void)
         }
 
         // Part 1 - calculate the difference between max and min in each line
-        int32_t min = INT_MAX, max = INT_MIN;
-        int32_t next;
-        for iter(IntArrayList, array, i, next)
+        int32_t min_value = INT_MAX, max_value = INT_MIN;
+        iter(IntArrayList, array, i, next)
         {
-            min = min < next ? min : next;
-            max = max > next ? max : next;
+            min_value = min(min_value, next);
+            max_value = max(max_value, next);
         }
-        part1 += max - min;
+        part1 += max_value - min_value;
 
         // Part 2 - find the only two numbers which divide one another, and find the quotient
-        int32_t a, b;
-        for iter(IntArrayList, array, i, a)
+        iter(IntArrayList, array, i, a)
         {
-            for iter(IntArrayList, array, j, b)
+            iter(IntArrayList, array, j, b)
             {
                 if (a != b && a > b && a % b == 0)
                 {
