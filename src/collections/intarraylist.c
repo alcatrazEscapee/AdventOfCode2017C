@@ -25,6 +25,17 @@ void IntArrayList__del(IntArrayList* arl)
     free(arl);
 }
 
+IntArrayList* IntArrayList__copy(IntArrayList* list)
+{
+    IntArrayList* new_list = new(IntArrayList, list->length);
+    iter(IntArrayList, list, i, v)
+    {
+        new_list->values[i] = v;
+    }
+    new_list->length = list->length;
+    return new_list;
+}
+
 String* IntArrayList__format(IntArrayList* arl)
 {
     String* s = new(String, "IntArrayList{");

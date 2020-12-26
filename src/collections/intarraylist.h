@@ -25,6 +25,7 @@ typedef struct IntArrayList__struct {
 // Constructor / Destructor
 IntArrayList* IntArrayList__new(uint32_t initial_size);
 void IntArrayList__del(IntArrayList* arl);
+IntArrayList* IntArrayList__copy(IntArrayList* arl);
 
 String* IntArrayList__format(IntArrayList* arl);
 

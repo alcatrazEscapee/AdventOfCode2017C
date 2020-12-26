@@ -1,17 +1,21 @@
 # Advent Of Code 2017 In C Makefile
 # Usage: make all|help|day=XX
 
-OUT_DIR = out/
-CC = gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
+DEBUG_DIR = out/debug/
+RELEASE_DIR = out/release/
+CC_DEBUG = gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
+CC_RELEASE = gcc -std=c11 -O3
 VALGRIND = valgrind --tool=memcheck --leak-check=full
 
-DAYS = $(addprefix $(OUT_DIR), \
+DAYS = \
 		day01.o \
 		day02.o \
 		day03.o \
 		day04.o \
-	)
+		day05.o
 
+DEBUG_DAYS = $(addprefix $(DEBUG_DIR), $(DAYS))
+RELEASE_DAYS = $(addprefix $(RELEASE_DIR), $(DAYS))
 
 INCLUDE = \
 	src/collections/arrayhashmap.h \
@@ -67,51 +71,55 @@ help :
 	@echo "  make checktest     - Run unit tests with Valgrind"
 
 .PHONY: run
-run: out/day$(day).o
+run: out/release/day$(day).o
 	-@if [ "$(day)" = "" ]; then \
 		echo "No day provided - try with make day=XX" ; \
 	else \
-		out/day$(day).o ; \
+		out/release/day$(day).o ; \
 	fi
 
 .PHONY: out/day.o
 
 .PHONY: all
-all: $(DAYS)
-	-@for day in $(DAYS) ; do \
+all: $(RELEASE_DAYS)
+	-@for day in $(RELEASE_DAYS) ; do \
         $$day ; \
     done
 
 .PHONY: clean
 clean :
-	rm -rf out/*.o
+	rm -rf out
 
 .PHONY: test
-test : out/test.o
-	-@out/test.o
+test : out/debug/test.o
+	-@out/debug/test.o
 
 .PHONY: check
-check : out/day$(day).o
+check : out/debug/day$(day).o
 	-@if [ "$(day)" = "" ]; then \
 		echo "No day provided - try with make check day=XX" ; \
 	else \
-		$(VALGRIND) out/day$(day).o ; \
+		$(VALGRIND) out/debug/day$(day).o ; \
 	fi
 
 .PHONY: checkall
-checkall : $(DAYS)
-	for day in $(DAYS) ; do \
+checkall : $(DEBUG_DAYS)
+	for day in $(DEBUG_DAYS) ; do \
 		$(VALGRIND) $$day ; \
 	done
 
 .PHONY: checktest
-checktest : out/test.o
-	-@$(VALGRIND) out/test.o
+checktest : out/debug/test.o
+	-@$(VALGRIND) out/debug/test.o
 
-out/day%.o : src/days/day%.c $(SRC) $(INCLUDE)
-	mkdir -p out
-	$(CC) $< $(SRC) -o $@
+out/debug/day%.o : src/days/day%.c $(SRC) $(INCLUDE)
+	mkdir -p out/debug
+	$(CC_DEBUG) $< $(SRC) -o $@
 
-out/test.o : $(TEST_SRC) test/unittest.h $(SRC) $(INCLUDE)
-	mkdir -p out
-	$(CC) test/unittest.c $(SRC) -o out/test.o
+out/debug/test.o : $(TEST_SRC) test/unittest.h $(SRC) $(INCLUDE)
+		mkdir -p out/debug
+	$(CC_DEBUG) test/unittest.c $(SRC) -o out/debug/test.o
+
+out/release/day%.o : src/days/day%.c $(SRC) $(INCLUDE)
+	mkdir -p out/release
+	$(CC_RELEASE) $< $(SRC) -o $@
