@@ -2,20 +2,21 @@
 
 int main(void)
 {
-    FILE* file = fopen("./inputs/day02.txt", "r");
-    PANIC_IF_NULL(file, "Unable to open input file.");
-
+    String* input = read_file("./inputs/day02.txt", 1000);
+    ArrayList* lines = str_split_lines(input);    
     IntArrayList* array = new(IntArrayList, 10);
 
+    del(String, input);
+
     int part1 = 0, part2 = 0;
-    iter(file_lines, file, line)
+    iter(ArrayList, String*, lines, i, line)
     {
-        iter(string_split, line, "\t", value)
+        ArrayList* values = str_split_whitespace(line);
+        iter(ArrayList, String*, values, j, substr)
         {
-            int e = 0;
-            sscanf(value, "%d", &e);
-            ial_append(array, e);
+            ial_append(array, str_parse_int32(substr));
         }
+        del(ArrayList, values);
 
         // Part 1 - calculate the difference between max and min in each line
         int32_t min_value = INT_MAX, max_value = INT_MIN;
@@ -41,8 +42,8 @@ int main(void)
         ial_clear(array);
     }
 
+    del(ArrayList, lines);
     del(IntArrayList, array);
-    fclose(file);
 
     ANSWER_INT(2, 1, 54426, part1);
     ANSWER_INT(2, 2, 333, part2);

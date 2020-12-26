@@ -20,10 +20,13 @@ typedef struct IntArrayList__struct {
 #include "../class.h"
 #include "../utils.h"
 #include "../panic.h"
+#include "../strings.h"
 
 // Constructor / Destructor
 IntArrayList* IntArrayList__new(uint32_t initial_size);
 void IntArrayList__del(IntArrayList* arl);
+
+String* IntArrayList__format(IntArrayList* arl);
 
 // Iterator
 // Leaks the value outside the iterator scope

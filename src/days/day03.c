@@ -1,12 +1,7 @@
 #include "aoc.h"
 
 #define INPUT 277678
-#define DEBUG false
 
-void write_vec2i_int_entry(ArrayHashMapEntry* entry)
-{
-    printf("{(%d, %d) -> %d}", ((Vec2i*) entry->key)->x, ((Vec2i*) entry->key)->y, *((int32_t*) entry->value));
-}
 
 int main(void)
 {
@@ -88,11 +83,6 @@ int main(void)
         ahm_put(points, copy(Vec2i, p), new(Int32, next_value));
         max_value = next_value;
 
-    }
-    if (DEBUG)
-    {
-        // Visualization of the final hash map
-        ahm_print(points, &write_vec2i_int_entry);
     }
 
     // Cleanup

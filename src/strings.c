@@ -22,12 +22,12 @@ String* str_format(char* format_string, ...)
 
 String* str_create_with_length(uint32_t initial_length)
 {
-    uint32_t initial_size = initial_length + 1; // Plus one for the null terminator
+    uint32_t initial_size = next_highest_power_of_two(initial_length + 1); // Plus one for the null terminator
     String* string = (String*) malloc(sizeof(String));
     char* slice = (char*) malloc(sizeof(char) * initial_size);
 
     PANIC_IF_NULL(string, "Unable to create string with size %d, length %d at str_create_with_length(uint32_t)", initial_size, initial_length);
-    PANIC_IF_NULL(slice, "Unable to create string backing arra with size %d, length %d at str_create_with_length(uint32_t)", initial_size, initial_length);
+    PANIC_IF_NULL(slice, "Unable to create string backing array with size %d, length %d at str_create_with_length(uint32_t)", initial_size, initial_length);
 
     string->slice = slice;
     string->size = initial_size;
@@ -65,8 +65,10 @@ String* constructor(String)(char* initial_value) // Constructor
     string->length = initial_length;
 
     memcpy(string->slice, initial_value, sizeof(char) * initial_length);
-    string->slice[initial_length] = '\0'; // Pad the last character with null
-
+    for (uint32_t i = initial_length; i < initial_size; i++)
+    {
+        string->slice[i] = '\0'; // Initialize all remaining length to null
+    }
     return string;
 }
 
@@ -158,10 +160,7 @@ void str_append_slice(String* string, char* text)
 {
     uint32_t text_length = str_slice_len(text);
     str_ensure_length(&string, string->length + text_length + 1);
-    for (uint32_t i = 0; i < text_length; i++)
-    {
-        string->slice[string->length + i] = text[i];
-    }
+    memcpy(&(string->slice[string->length]), text, sizeof(char) * text_length);
     string->slice[string->length + text_length] = '\0';
     string->length += text_length;
 }
@@ -169,13 +168,17 @@ void str_append_slice(String* string, char* text)
 void str_append_string(String* string, String* other)
 {
     str_ensure_length(&string, string->length + other->length + 1);
-    for (uint32_t i = 0; i < other->length; i++)
-    {
-        string->slice[string->length + i] = other->slice[i];
-    }
+    memcpy(&(string->slice[string->length]), other->slice, sizeof(char) * other->length);
     string->slice[string->length + other->length] = '\0';
     string->length += other->length;
     del(String, other);
+}
+
+void str_pop(String* string, uint32_t amount)
+{
+    if (amount > string->length) PANIC("Tried to pop %d characters from the string '%s' which was only length %d", amount, string->slice, string->length);
+    string->length -= amount;
+    string->slice[string->length] = '\0';
 }
 
 bool str_in(String* string, uint32_t index)
@@ -218,6 +221,106 @@ bool str_equals_content(String* string, char* static_string)
     return false;
 }
 
+// String Manipulations
+
+void str_remove_whitespace(String* string)
+{
+    return str_remove_all(string, "\r\n\t ");
+}
+
+void str_remove_all(String* string, char* chars)
+{
+    uint32_t chars_length = str_slice_len(chars);
+    uint32_t removed = 0;
+    for (uint32_t pointer = 0; pointer < string->length; pointer++)
+    {
+        if (str_char_in_chars(chars, chars_length, string->slice[pointer]))
+        {
+            removed++;
+        }
+        else
+        {
+            string->slice[pointer - removed] = string->slice[pointer];
+        }
+    }
+    string->length -= removed;
+}
+
+ArrayList* str_split_lines(String* string)
+{
+    return str_split_all(string, "\r\n");
+}
+
+ArrayList* str_split_whitespace(String* string)
+{
+    return str_split_all(string, "\r\n\t ");
+}
+
+// Splits the string into substrings deliminated by (and removing) any of the characters in chars.
+ArrayList* str_split_all(String* string, char* chars)
+{
+    ArrayList* list = new(ArrayList, 10, class(String));
+    uint32_t chars_length = str_slice_len(chars);
+    uint32_t last = 0;
+    for (uint32_t pointer = 0; pointer < string->length; pointer++)
+    {
+        if (str_char_in_chars(chars, chars_length, string->slice[pointer]))
+        {
+            // Create and add a new substring, if the previous length is nonzero
+            if (pointer > last)
+            {
+                al_append(list, str_substring(string, last, pointer));
+            }
+            last = pointer + 1;
+        }
+    }
+    // Include the last substring
+    if (string->length > last)
+    {
+        al_append(list, str_substring(string, last, string->length));
+    }
+    return list;
+}
+
+// Returns a new string which is a substring of this string
+String* str_substring(String* string, uint32_t start_inclusive, uint32_t end_exclusive)
+{
+    if (end_exclusive <= start_inclusive) PANIC("Cannot create a substring of length %d <= 0", end_exclusive - start_inclusive);
+    if (end_exclusive > string->length) PANIC("Cannot create a substring with end_exclusive = %d, as the string has length %d", end_exclusive, string->length);
+    
+    if (start_inclusive == 0 && end_exclusive == string->length)
+    {
+        // Special case, we're just copying the string
+        return copy(String, string);
+    }
+    else
+    {
+        uint32_t length = end_exclusive - start_inclusive;
+        String* sub = str_create_with_length(length);
+        memcpy(sub->slice, string->slice + start_inclusive, sizeof(char) * length);
+        sub->slice[length] = '\0';
+        sub->length = length;
+        return sub;
+    }
+}
+
+int32_t str_parse_int32(String* string)
+{
+    int32_t e = 0;
+    sscanf(string->slice, "%d", &e);
+    return e;
+}
+
+// Sorting
+
+void str_sort(String* string)
+{
+    if (string->length > 1)
+    {
+        sorting_qsort_recursive(string, (FnSortingLessThan) &str_qsort_lt_fn, (FnSortingSwap) &str_qsort_swap_fn, 0, string->length - 1);
+    }
+}
+
 // Private Methods
 
 void str_ensure_length(String** string, uint32_t required_length)
@@ -227,13 +330,44 @@ void str_ensure_length(String** string, uint32_t required_length)
     {
         // Resize the string
         uint32_t new_size = next_highest_power_of_two(required_size);
-        char* new_slice = (char*) malloc(sizeof(char) * required_size);
+        char* new_slice = (char*) malloc(sizeof(char) * new_size);
 
-        PANIC_IF_NULL(new_slice, "Unable to extend string from length %d / size %d to length %d / size %d", (*string)->length, (*string)->size, required_length, required_size);
+        PANIC_IF_NULL(new_slice, "Unable to extend string from length %d / size %d to length %d / size %d", (*string)->length, (*string)->size, required_length, new_size);
 
-        memcpy(new_slice, (*string)->slice, sizeof(char) * (1 + (*string)->length)); // Copy the existing string to the new slice
+        memcpy(new_slice, (*string)->slice, sizeof(char) * (*string)->length); // Copy the existing string to the new slice
         free((*string)->slice); // Free the old slice
         (*string)->slice = new_slice; // Point the string at the new slice
         (*string)->size = new_size; // Update the size of the string
+
+        // Initialize the rest of the new slice with nulls
+        for (uint32_t i = (*string)->length; i < (*string)->size; i++)
+        {
+            (*string)->slice[i] = '\0';
+        }
     }
 }
+
+bool str_char_in_chars(char* chars, uint32_t length, char c)
+{
+    for (uint32_t i = 0; i < length; i++)
+    {
+        if (c == chars[i])
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool str_qsort_lt_fn(String* string, uint32_t left, uint32_t right)
+{
+    return string->slice[left] < string->slice[right];
+}
+
+void str_qsort_swap_fn(String* string, uint32_t left, uint32_t right)
+{
+    char c = string->slice[left];
+    string->slice[left] = string->slice[right];
+    string->slice[right] = c;
+}
+

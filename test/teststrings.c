@@ -5,9 +5,13 @@
 TEST(test_strings_str_format, {
     String* s1 = str_format("test format %d", 100);
     ASSERT_TRUE(str_equals_content(s1, "test format 100"), "Got '%s' instead", s1->slice);
+    ASSERT_EQUAL(s1->length, 15, "Expected length 15, got %d", s1->length);
+    ASSERT_EQUAL(s1->size, 16, "Expected size 16, got %d", s1->size);
 
     String* s2 = str_format("->%s<- %d?", "long string that really shouldn't fit", 100);
     ASSERT_TRUE(str_equals_content(s2, "->long string that really shouldn't fit<- 100?"), "Got '%s' instead", s2->slice);
+    ASSERT_EQUAL(s2->length, 46, "Expected length 46, got %d", s2->length);
+    ASSERT_EQUAL(s2->size, 64, "Expected size 64, got %d", s2->size);
 
     del(String, s1);
     del(String, s2);
@@ -15,6 +19,8 @@ TEST(test_strings_str_format, {
 
 TEST(test_strings_str_slice_len, {
     ASSERT_EQUAL(str_slice_len("15LengthString!"), 15, "?");
+    ASSERT_EQUAL(str_slice_len("1"), 1, "?");
+    ASSERT_EQUAL(str_slice_len(""), 0, "?");
 });
 
 TEST(test_strings_new, {
@@ -59,35 +65,50 @@ TEST(test_strings_str_compare, {
 
 TEST(test_strings_str_append_char, {
     String* s1 = new(String, "test");
-    String* s2 = new(String, "test1");
+
+    ASSERT_EQUAL(s1->length, 4, "Expected length 4, got %d", s1->length);
+    ASSERT_EQUAL(s1->size, 8, "Expected size 8, got %d", s1->size);
 
     str_append_char(s1, '1');
-    ASSERT_TRUE(equals(String, s1, s2), "'1' should be appended to 'test'");
+    ASSERT_TRUE(str_equals_content(s1, "test1"), "Expected s1 = 'test1', got '%s'", s1->slice);
+    ASSERT_EQUAL(s1->length, 5, "Expected length 5, got %d", s1->length);
+    ASSERT_EQUAL(s1->size, 8, "Expected size 8, got %d", s1->size);
+
+    for (uint32_t i = 0; i < 16; i++)
+    {
+        str_append_char(s1, '2');
+    }
+
+    ASSERT_TRUE(str_equals_content(s1, "test12222222222222222"), "16 '2's should be appended to 'test1', got '%s'", s1->slice);
+    ASSERT_EQUAL(s1->length, 21, "Expected length 5, got %d", s1->length);
+    ASSERT_EQUAL(s1->size, 32, "Expected size 32, got %d", s1->size);
 
     del(String, s1);
-    del(String, s2);
 });
 
 TEST(test_strings_str_append_slice, {
     String* s1 = new(String, "test");
-    String* s2 = new(String, "test and some more text");
+
+    ASSERT_EQUAL(s1->length, 4, "Expected length 4, got %d", s1->length);
+    ASSERT_EQUAL(s1->size, 8, "Expected size 8, got %d", s1->size);
 
     str_append_slice(s1, " and some more text");
-    ASSERT_TRUE(equals(String, s1, s2), "' and some more text' should be appended to 'test'");
+    ASSERT_TRUE(str_equals_content(s1, "test and some more text"), "String not equal: '%s'", s1->slice);
+    ASSERT_EQUAL(s1->length, 23, "Expected length 23, got %d", s1->length);
+    ASSERT_EQUAL(s1->size, 32, "Expected size 32, got %d", s1->size);
 
     del(String, s1);
-    del(String, s2);
 });
 
 TEST(test_strings_str_append_string, {
     String* s1 = new(String, "test");
-    String* s2 = new(String, "test and some more text");
 
     str_append_string(s1, new(String, " and some more text")); // Consumes argument
-    ASSERT_TRUE(equals(String, s1, s2), "' and some more text' should be appended to 'test'");
+    ASSERT_TRUE(str_equals_content(s1, "test and some more text"), "String not equal: '%s'", s1->slice);
+    ASSERT_EQUAL(s1->length, 23, "Expected length 23, got %d", s1->length);
+    ASSERT_EQUAL(s1->size, 32, "Expected size 32, got %d", s1->size);
 
     del(String, s1);
-    del(String, s2);
 });
 
 TEST(test_strings_str_equals_content, {
@@ -101,6 +122,57 @@ TEST(test_strings_str_equals_content, {
     del(String, s1);
 });
 
+TEST(test_strings_str_remove_all, {
+    String* s1 = new(String, "test some things");
+
+    str_remove_all(s1, "t");
+    ASSERT_TRUE(str_equals_content(s1, "es some hings"), "Expected 't' to be removed, got '%s'", s1->slice);
+
+    str_remove_all(s1, " es");
+    ASSERT_TRUE(str_equals_content(s1, "omhing"), "Expected 'tes ' to be removed, got '%s'", s1->slice);
+    
+    str_remove_all(s1, "omhing");
+    ASSERT_TRUE(str_equals_content(s1, ""), "Expected empty string, got '%s'", s1->slice);
+    ASSERT_EQUAL(s1->length, 0, "Expected zero length, got %d", s1->length);
+
+    del(String, s1);
+});
+
+TEST(test_strings_str_substring, {
+    String* s1 = new(String, "the lazy cat");
+
+    String* s2 = str_substring(s1, 0, s1->length); // copy
+    ASSERT_TRUE(equals(String, s1, s2), "Expected a copy, got '%s'", s2->slice);
+
+    String* s3 = str_substring(s1, 0, 3);
+    ASSERT_TRUE(str_equals_content(s3, "the"), "Expected the first word, got '%s'", s3->slice);
+
+    String* s4 = str_substring(s1, 4, 8);
+    ASSERT_TRUE(str_equals_content(s4, "lazy"), "Expected the second word, got '%s'", s4->slice);
+
+    String* s5 = str_substring(s1, 9, s1->length);
+    ASSERT_TRUE(str_equals_content(s5, "cat"), "Expected the third word, got '%s'", s5->slice);
+
+    del(String, s1);
+    del(String, s2);
+    del(String, s3);
+    del(String, s4);
+    del(String, s5);
+});
+
+TEST(test_strings_str_sort, {
+    String* s1 = new(String, "thelazycat");
+    str_sort(s1);
+    ASSERT_TRUE(str_equals_content(s1, "aacehlttyz"), "Expected sorted, got '%s'", s1->slice);
+
+    String* s2 = new(String, "qwertyuioplkjhgfdsazxcvbnm");
+    str_sort(s2);
+    ASSERT_TRUE(str_equals_content(s2, "abcdefghijklmnopqrstuvwxyz"), "Expected sorted, got '%s'", s2->slice);
+
+    del(String, s1);
+    del(String, s2);
+});
+
 TEST_GROUP(test_strings_main, {
     test_strings_str_format();
     test_strings_str_slice_len();
@@ -111,4 +183,7 @@ TEST_GROUP(test_strings_main, {
     test_strings_str_append_slice();
     test_strings_str_append_string();
     test_strings_str_equals_content();
+    test_strings_str_remove_all();
+    test_strings_str_substring();
+    test_strings_str_sort();
 });

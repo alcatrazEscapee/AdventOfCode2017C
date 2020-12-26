@@ -25,6 +25,27 @@ void IntArrayList__del(IntArrayList* arl)
     free(arl);
 }
 
+String* IntArrayList__format(IntArrayList* arl)
+{
+    String* s = new(String, "IntArrayList{");
+    if (arl->length == 0)
+    {
+        str_append_char(s, '}');
+        return s;
+    }
+    else
+    {
+        iter(IntArrayList, arl, i, value)
+        {
+            str_append_string(s, str_format("%d", value));
+            str_append_slice(s, ", ");
+        }
+    }
+    str_pop(s, 2); // Pop the last ', '
+    str_append_char(s, '}');
+    return s;
+}
+
 bool ial_in(IntArrayList* arl, uint32_t index)
 {
     return index < arl->length;
@@ -47,8 +68,8 @@ void ial_append(IntArrayList* arl, int32_t value)
     if (arl->length == arl->size)
     {
         // Resize the array
-        int32_t old_size = arl->size;
-        int32_t new_size = old_size * 2;
+        uint32_t old_size = arl->size;
+        uint32_t new_size = old_size * 2;
         int32_t* new_array = (int32_t*) malloc(sizeof(int32_t) * new_size);
         PANIC_IF_NULL(new_array, "Unable to resize IntArrayList from %d to %d", old_size, new_size);
 

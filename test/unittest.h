@@ -29,6 +29,7 @@
 
 extern uint32_t __failed_tests;
 extern uint32_t __passed_tests;
+extern bool __verbose_on_pass;
 
 #ifdef VERBOSE_ON_PASS
 #define __verbose_on_pass true
@@ -106,7 +107,7 @@ do { \
 do { \
     if ((left) != (right)) \
     { \
-        printf("Assert Equal Failed.\n\tLeft %s != %s Right\n\t", #left, #right); \
+        printf("Assert Equal Failed.\n\t'%s' != '%s'\n\t", #left, #right); \
         FAIL(args); \
         printf("\n"); \
     } \

@@ -18,9 +18,21 @@ ArrayHashMapEntry* ArrayHashMapEntry__new(ArrayHashMap* map, void* key, void* va
 void ArrayHashMapEntry__del(ArrayHashMapEntry* entry)
 {
     del_c(entry->map->key_class, entry->key);
-    del_c(entry->map->value_class, entry->value);
-
+    if (entry->value != NULL) // We allow null values - only delete them if it's non-null
+    {
+        del_c(entry->map->value_class, entry->value);
+    }
     free(entry);
+}
+
+String* ArrayHashMapEntry__format(ArrayHashMapEntry* entry)
+{
+    String* s = new(String, "(");
+    str_append_string(s, format_c(entry->map->key_class, entry->key));
+    str_append_slice(s, ": ");
+    str_append_string(s, format_c(entry->map->value_class, entry->value));
+    str_append_char(s, ')');
+    return s;
 }
 
 ArrayHashMap* ArrayHashMap__new(uint32_t initial_size, Class* key_class, Class* value_class)
@@ -33,6 +45,11 @@ ArrayHashMap* ArrayHashMap__new(uint32_t initial_size, Class* key_class, Class* 
     PANIC_IF_NULL(map, "Unable to create ArrayHashMap with initial_size %d", initial_size);
     PANIC_IF_NULL(array, "Unable to create ArrayHashMap backing array with initial_size %d", initial_size);
 
+    for (uint32_t i = 0; i < initial_size; i++)
+    {
+        array[i] = NULL;
+    }
+
     map->array = array;
     map->size = initial_size;
     map->key_class = key_class;
@@ -44,25 +61,47 @@ ArrayHashMap* ArrayHashMap__new(uint32_t initial_size, Class* key_class, Class* 
 
 void ArrayHashMap__del(ArrayHashMap* map)
 {
-    for (uint32_t i = 0; i < map->size; i++)
+    // Deletion is one delayed as we are iterating through the map using this entry
+    ArrayHashMapEntry* prev = NULL;
+    iter(ArrayHashMap, map, index, entry)
     {
-        if (map->array[i] != NULL)
+        if (prev != NULL)
         {
-            ArrayHashMapEntry* entry = map->array[i];
-            ArrayHashMapEntry* prev = NULL;
-            do
-            {
-                prev = entry;
-                entry = entry->next;
-                del(ArrayHashMapEntry, prev);
-            } while (entry != NULL);
+            del(ArrayHashMapEntry, prev);
         }
+        prev = entry;
+    }
+    if (prev != NULL)
+    {
+        del(ArrayHashMapEntry, prev);
     }
     free(map->array);
     free(map);
 }
 
-void* ahm_put(ArrayHashMap* map, void* key, void* value)
+String* ArrayHashMap__format(ArrayHashMap* map)
+{
+    String* s = new(String, "ArrayHashMap{");
+    if (map->length == 0)
+    {
+        str_append_char(s, '}');
+        return s;
+    }
+    else
+    {
+        iter(ArrayHashMap, map, index, entry)
+        {
+            str_append_string(s, format(ArrayHashMapEntry, entry));
+            str_append_slice(s, ", ");
+        }
+    }
+    str_pop(s, 2); // Pop the last ', '
+    str_append_char(s, '}');
+    return s;
+}
+
+
+bool ahm_put(ArrayHashMap* map, void* key, void* value)
 {
     uint32_t index = hash_c(map->key_class, key);
     index &= (map->size - 1);
@@ -74,6 +113,7 @@ void* ahm_put(ArrayHashMap* map, void* key, void* value)
         entry = new(ArrayHashMapEntry, map, key, value);
         entry->index = index;
         map->array[index] = entry;
+        map->length++;
     }
     else
     {
@@ -85,12 +125,13 @@ void* ahm_put(ArrayHashMap* map, void* key, void* value)
             // parent is non-null, parent->next may be null
             if (equals_c(map->key_class, parent->key, key))
             {
-                // parent->key == key, so this element needs to be modified, and the previous value returned
-                // The map only borrows all keys and values, so this does not transfer any ownership
-                // All entries stay within the map
-                void* old = parent->value;
+                // parent->key == key, so this element needs to be modified, and the previous key-value pair dropped. Length does not change.
+                del_c(map->key_class, parent->key);
+                del_c(map->value_class, parent->value);
+
+                parent->key = key;
                 parent->value = value;
-                return old;
+                return true;
             }
             // Otherwise, advance in the search
             prev = parent;
@@ -103,9 +144,15 @@ void* ahm_put(ArrayHashMap* map, void* key, void* value)
 
         // Insert by linking to the previous
         prev->next = entry;
+        map->length++;
     }
     // No previous entry
-    return NULL;
+    return false;
+}
+
+bool ahm_key_in(ArrayHashMap* map, void* key)
+{
+    return ahm_get(map, key) != NULL;
 }
 
 void* ahm_get(ArrayHashMap* map, void* key)
@@ -137,48 +184,31 @@ void* ahm_get(ArrayHashMap* map, void* key)
     }
 }
 
-void ahm_print(ArrayHashMap* map, void (*entry_writer)(ArrayHashMapEntry*))
+void ahm_clear(ArrayHashMap* map)
 {
-    printf("ArrayHashMap: {\n");
+    // Deletion is one delayed as we are iterating through the map using this entry
+    // Copied from ArrayHashMap__del() except without the final free's
     for (uint32_t i = 0; i < map->size; i++)
     {
-        if (map->array[i] != NULL)
+        ArrayHashMapEntry* prev = NULL;
+        ArrayHashMapEntry* curr = map->array[i];
+        while (curr != NULL)
         {
-            ArrayHashMapEntry* entry = map->array[i];
-            printf("\t%4d\t", i);
-            do
+            if (prev != NULL)
             {
-                printf(" -> ");
-                entry_writer(entry);
-                entry = entry->next;
-            } while (entry != NULL);
-            printf("\n");
-        }
-    }
-    printf("}\n");
-}
-
-void ahm_iter_next_entry(ArrayHashMap* map, ArrayHashMapEntry** entry)
-{
-    if ((*entry)->next == NULL)
-    {
-        // next entry in this linked list is null, so iterate indexes until we reach the next filled entry
-        for (uint32_t i = (*entry)->index; i < map->size; i++)
-        {
-            ArrayHashMapEntry* next = map->array[i];
-            if (next != NULL)
-            {
-                *entry = next;
-                return;
+                del(ArrayHashMapEntry, prev);
             }
+
+            prev = curr;
+            curr = curr->next;
         }
 
-        // Reached the end of the list, so assign NULL, and the iterator will terminate
-        *entry = NULL;
+        if (prev != NULL)
+        {
+            del(ArrayHashMapEntry, prev);
+        }
+
+        map->array[i] = NULL;
     }
-    else
-    {
-        // Iterate through the linked list
-        *entry = (*entry)->next;
-    }
+    map->length = 0;
 }

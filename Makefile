@@ -2,40 +2,50 @@
 # Usage: make all|help|day=XX
 
 OUT_DIR = out/
-CC = gcc -std=c11 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
-VALGRIND = valgrind --tool=memcheck
+CC = gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
+VALGRIND = valgrind --tool=memcheck --leak-check=full
 
 DAYS = $(addprefix $(OUT_DIR), \
 		day01.o \
 		day02.o \
 		day03.o \
+		day04.o \
 	)
 
 
 INCLUDE = \
-	src/collections/intarraylist.h \
 	src/collections/arrayhashmap.h \
+	src/collections/arrayhashset.h \
+	src/collections/arraylist.h \
+	src/collections/intarraylist.h \
 	src/math/integer.h \
 	src/math/vectors.h \
 	src/days/aoc.h \
 	src/class.h \
 	src/panic.h \
+	src/sorting.h \
 	src/strings.h \
-	src/utils.h
+	src/utils.h \
+	src/void.h
 
 SRC = \
-	src/collections/intarraylist.c \
 	src/collections/arrayhashmap.c \
+	src/collections/arrayhashset.c \
+	src/collections/arraylist.c \
+	src/collections/intarraylist.c \
 	src/math/integer.c \
 	src/math/vectors.c \
 	src/days/aoc.c \
+	src/sorting.c \
 	src/strings.c \
-	src/utils.c
+	src/utils.c \
+	src/void.c
 
 # Test sources
 # These are always #include-ed directly in the main unittest file
 # However, we still need to track them for modifications so we know when to re-make the test binary
 TEST_SRC = \
+	test/collections/testarrayhashmap.c \
 	test/math/testinteger.c \
 	test/teststrings.c \
 	test/unittest.c
@@ -52,9 +62,9 @@ help :
 	@echo "  make all           - Run all days"
 	@echo "  make clean         - Cleans all compiled binaries"
 	@echo "  make test          - Run unit tests"
-	@echo "  make check day=XX  - Run day XX with Valgrind memcheck"
-	@echo "  make checkall      - Run all days with Valgrind memcheck"
-	@echo "  make checktest     - Run unit tests with Valgrind memcheck"
+	@echo "  make check day=XX  - Run day XX with Valgrind"
+	@echo "  make checkall      - Run all days with Valgrind"
+	@echo "  make checktest     - Run unit tests with Valgrind"
 
 .PHONY: run
 run: out/day$(day).o

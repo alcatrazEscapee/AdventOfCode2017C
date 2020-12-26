@@ -1,48 +1,19 @@
 
 #include "aoc.h"
 
-#define CHUNK_SIZE 16
-
-bool read_line(FILE* file, char** line)
+String* read_file(char* file_name, uint32_t estimated_size)
 {
-    uint32_t size = CHUNK_SIZE;
-    uint32_t length = 0;
-    char chunk[CHUNK_SIZE] = { '\0' };
+    FILE* file = fopen(file_name, "r");
+    PANIC_IF_NULL(file, "Unable to open file '%s'", file_name);
 
-    if (*line == NULL)
+    String* s = str_create_with_length(estimated_size);
+    char c = '\0';
+    while ((c = fgetc(file)) != EOF)
     {
-        *line = (char*) malloc(sizeof(char) * CHUNK_SIZE);
+        str_append_char(s, c);
     }
 
-    while(fgets(chunk, CHUNK_SIZE, file) != NULL)
-    {
-        // Update the length of the line
-        uint32_t chunk_length = strlen(chunk);
+    fclose(file);
 
-        // Copy the chunk into the line
-        memcpy(*line + length, chunk, chunk_length);
-        length += chunk_length;
-        
-        // Check if we've ran into a newline
-        if ((*line)[length - 1] == '\n')
-        {
-            // Null terminate, removing the newline character
-            (*line)[length - 1] = '\0';
-            if (length - 1 == 0)
-            {
-                free(*line);
-            }
-            return length - 1 > 0;
-        }
-
-        // If nessecary, double the line length
-        if (length >= size - CHUNK_SIZE)
-        {
-            *line = realloc(*line, size * 2);
-            PANIC_IF_NULL(*line, "Memory Overflow at aoc#read_line(FILE*, char*)");
-            size *= 2;
-        }
-    }
-    free(*line);
-    return false;
+    return s;
 }

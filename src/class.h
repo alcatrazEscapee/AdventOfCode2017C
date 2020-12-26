@@ -19,6 +19,7 @@
 // - This IS part of the class struct, and MUST be defined, but MAY panic depending on the class.
 //
 // 4. equals(cls, left, right) | equals_c(cls_struct, instance)
+// - Automatically null checks both left and right. NULL == NULL, NULL != anything else
 // - Returns true if 'left' and 'right' are semantically equivilant.
 // - Borrows both left and right
 // - This IS part of the class struct, and MUST be defined.
@@ -49,6 +50,7 @@
 // - This is NOT part of the class struct and MAY be defined.
 //
 // 9. format(args...) | format_c(cls_struct, instance)
+// - Automatically null checks the instance argument
 // - This formats a class or other instance to a String
 // - Ownership of the String is transfered to the caller
 // - By default, this is implemented as returning the class name + the hash code.
@@ -78,10 +80,10 @@ typedef struct Class__struct {
 #define new(cls, args...) cls ## __new(args)
 #define del(cls, instance) cls ## __del(instance)
 #define copy(cls, instance) cls ## __copy(instance)
-#define equals(cls, left, right) cls ## __equals(left, right)
+#define equals(cls, left, right) ((left) == NULL || (right) == NULL ? (left) == (right) : cls ## __equals(left, right))
 #define compare(cls, left, right) cls ## __compare(left, right)
 #define hash(cls, instance) cls ## __hash(instance)
-#define format(cls, instance) cls ## __format(instance)
+#define format(cls, instance) ((instance) == NULL ? NEW_NULL_STRING : cls ## __format(instance))
 
 // Simplifications for compare - only one method is nessecary, but often we just want a simple operator
 #define compare_lt(cls, left, right) (compare(cls, left, right) == -1)

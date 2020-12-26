@@ -1,20 +1,19 @@
 #include "aoc.h"
 
+#define INPUT_LENGTH 2000
+
 int main(void)
 {
-    FILE* file = fopen("./inputs/day01.txt", "r");
-    PANIC_IF_NULL(file, "Unable to open input file.");
-
-    IntArrayList* array = new(IntArrayList, 2098);
-    iter(file_chars, file, c)
+    String* input = read_file("./inputs/day01.txt", INPUT_LENGTH);
+    IntArrayList* array = new(IntArrayList, INPUT_LENGTH);
+    
+    str_remove_whitespace(input);
+    iter(String, input, i, c)
     {
-        if (isdigit(c))
-        {
-            ial_append(array, c - '0');
-        }
+        ial_append(array, c - '0');
     }
 
-    fclose(file);
+    del(String, input);
 
     int32_t part1 = 0, part2 = 0;
     iter(IntArrayList, array, i, a)
