@@ -27,19 +27,19 @@ void ArrayList__del(ArrayList* arl)
     free(arl);
 }
 
-String* ArrayList__format(ArrayList* arl)
+String* ArrayList__format(ArrayList* list)
 {
     String* s = new(String, "ArrayList{");
-    if (arl->length == 0)
+    if (list->length == 0)
     {
         str_append_char(s, '}');
         return s;
     }
     else
     {
-        iter(ArrayList, void*, arl, i, value)
+        for iter(ArrayList, it, list)
         {
-            str_append_string(s, format_c(arl->value_class, value));
+            str_append_string(s, format_c(list->value_class, it->value));
             str_append_slice(s, ", ");
         }
     }
@@ -47,6 +47,28 @@ String* ArrayList__format(ArrayList* arl)
     str_append_char(s, '}');
     return s;
 }
+
+
+// Iterator
+
+Iterator(ArrayList)* ArrayList__iterator__new(ArrayList* list)
+{
+    Iterator(ArrayList)* it = malloc(sizeof(Iterator(ArrayList)));
+    PANIC_IF_NULL(it, "Unable to create Iterator<ArrayList<%s>>", list->value_class->name);
+
+    it->index = 0;
+    it->value = 0;
+
+    return it;
+}
+
+void ArrayList__iterator__del(Iterator(ArrayList)* it)
+{
+    free(it);
+}
+
+
+// Instance Methods
 
 bool al_in(ArrayList* arl, uint32_t index)
 {
@@ -86,11 +108,11 @@ void al_append(ArrayList* arl, void* value)
     arl->length++;
 }
 
-void al_clear(ArrayList* arl)
+void al_clear(ArrayList* list)
 {
-    iter(ArrayList, void*, arl, i, value)
+    for iter(ArrayList, it, list)
     {
-        del_c(arl->value_class, value);
+        del_c(list->value_class, it->value);
     }
-    arl->length = 0;
+    list->length = 0;
 }

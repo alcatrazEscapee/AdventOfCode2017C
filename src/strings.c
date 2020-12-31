@@ -50,7 +50,7 @@ uint32_t str_slice_len(char* slice)
 
 DERIVE_CLASS(String); // Class
 
-String* constructor(String)(char* initial_value) // Constructor
+String* String__new(char* initial_value) // Constructor
 {
     uint32_t initial_length = str_slice_len(initial_value);
     uint32_t initial_size = next_highest_power_of_two(initial_length + 1); // Plus one for the null terminator
@@ -133,9 +133,9 @@ int32_t String__compare(String* left, String* right) // Compare
 uint32_t String__hash(String* instance) // Hash
 {
     uint32_t h = 0;
-    iter(String, instance, i, c)
+    for iter(String, it, instance)
     {
-        h = (h * 31) + (uint32_t) c;
+        h = (h * 31) + (uint32_t) it->value;
     }
     return h;
 }
@@ -147,6 +147,28 @@ String* String__format(String* instance) // Format
     // Thus, in order to satisfy both constraints, we have to use copy() here, rather than returning the instance;
     return copy(String, instance);
 }
+
+
+// String Iterator
+
+Iterator(String)* String__iterator__new(String* string)
+{
+    Iterator(String)* it = malloc(sizeof(Iterator(String)));
+    PANIC_IF_NULL(it, "Unable to create Iterator<String> for String '%s'", string->slice);
+
+    it->index = 0;
+    it->value = '\0';
+
+    return it;
+}
+
+void String__iterator__del(Iterator(String)* it)
+{
+    free(it);
+}
+
+
+// Instance Methods
 
 void str_append_char(String* string, char c)
 {
@@ -200,16 +222,13 @@ void str_set_char(String* string, uint32_t index, char c)
 
 bool str_equals_content(String* string, char* static_string)
 {
-    iter(String, string, i, c)
+    for iter(String, it, string)
     {
-        if (static_string[i] == '\0')
+        // Reached the end of the static string before string, OR
+        // Not equal at position i
+        if (static_string[it->index] == '\0' || it->value != static_string[it->index])
         {
-            // Reached the end of the static string before string
-            return false;
-        }
-        else if (string->slice[i] != static_string[i])
-        {
-            // Not equal at position i
+            del_iter(String, it); // Need to cleanup the iterator as we never complete the loop normally
             return false;
         }
     }

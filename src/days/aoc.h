@@ -3,18 +3,7 @@
 #ifndef AOC_H
 #define AOC_H
 
-#include <stdio.h> // printf, etc.
-#include <stdlib.h> // malloc, free
-#include <stdint.h> // int32_t, etc.
-#include <stdbool.h> // true, false, bool
-#include <stdarg.h> // Varargs
-
-#include <string.h> // memcpy
-#include <ctype.h> // isdigit
-#include <limits.h> // INT_MAX, INT_MIN
-
-// Required library elements
-#include "../panic.h"
+#include "../common.h"
 
 // Collections
 #include "../collections/arrayhashmap.h"

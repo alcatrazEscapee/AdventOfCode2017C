@@ -28,8 +28,8 @@ int main(void)
     }
 
     del(IntArrayList, active_code);
-    
     active_code = copy(IntArrayList, code);
+    
     uint32_t part2 = 0;
     pointer = 0;
 

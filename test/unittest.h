@@ -20,12 +20,10 @@
 //
 // Including a #define VERBOSE_ON_PASS will output additional output on the result of every passed test, if desired
 
+#include "../src/common.h"
+
 #ifndef UNITTEST_H
 #define UNITTEST_H
-
-#include <stdio.h> // printf, etc.
-#include <stdint.h> // int32_t, etc.
-#include <stdbool.h> // true, false, bool
 
 extern uint32_t __failed_tests;
 extern uint32_t __passed_tests;

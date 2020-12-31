@@ -12,7 +12,9 @@ void ArrayHashSet__del(ArrayHashSet* set)
 
 String* ArrayHashSet__format(ArrayHashSet* set)
 {
-    String* s = new(String, "ArrayHashSet{");
+    String* s = new(String, "ArrayHashSet<");
+    str_append_slice(s, set->key_class->name);
+    str_append_slice(s, ">{");
     if (set->length == 0)
     {
         str_append_char(s, '}');
@@ -20,9 +22,9 @@ String* ArrayHashSet__format(ArrayHashSet* set)
     }
     else
     {
-        iter(ArrayHashMap, set, index, entry)
+        for iter(ArrayHashMap, it, set)
         {
-            str_append_string(s, format_c(set->key_class, entry->key));
+            str_append_string(s, format_c(set->key_class, it->key));
             str_append_slice(s, ", ");
         }
     }

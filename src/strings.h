@@ -1,59 +1,29 @@
 // A heap allocated String data type with utility methods, similar to Rust's String vs. &'static str
 // Unlike Rust's string natively handling unicode data, we make the (simplifying) assumptions that a character represents a single byte of 7-bit ASCII data.
 
+#include "common.h"
+#include "collections/arraylist.h"
+
 #ifndef STRINGS_H
 #define STRINGS_H
 
-#include <stdio.h> // printf, etc.
-#include <stdlib.h> // malloc, free
-#include <stdint.h> // int32_t, etc.
-#include <stdbool.h> // true, false, bool
-#include <string.h> // memcpy
-#include <stdarg.h> // Varargs
-
-typedef struct String__struct
-{
-    char* slice; // Backing array
-    uint32_t size; // Size of backing array
-    /* public readonly */ uint32_t length; // Length of filled string (number of single byte ASCII chars)
-} String;
-
-#include "class.h"
-#include "panic.h"
-#include "sorting.h"
-#include "utils.h"
-#include "collections/arraylist.h"
-
 // Class Definitions
-String* constructor(String)(char* initial_value);
+String* String__new(char* initial_value);
 DERIVE_CLASS_HEADER(String, String*);
 
 // Iterator
-#define String__iter(string, index, character) uint32_t index = 0; for (char character = '\0'; index < string->length ? (character = string->slice[index], true) : false; index++)
+typedef struct
+{
+    uint32_t index;
+    char value;
+} Iterator(String);
 
-// String printing. Adds println for both varargs and String variants, and print for Strings
-// All variants using a String consume the string
-// Both variants that take a String first store the provided expression (e.g. if it was the result of a format() call) as to not duplicate it.
+Iterator(String)* String__iterator__new(String* string);
+void String__iterator__del(Iterator(String)* it);
 
-#define println(args...) do { \
-    printf(args); \
-    printf("\n"); \
-} while (0)
+#define String__iterator__test(it, string) (it)->index < (string)->length ? ((it)->value = (string)->slice[(it)->index], true) : false
+#define String__iterator__next(it, string) (it)->index++
 
-#define str_print(string) do { \
-    String* __string_to_print = (string); \
-    printf("%s", __string_to_print->slice); \
-    del(String, __string_to_print); \
-} while (0)
-
-#define str_println(string) do { \
-    String* __string_to_print = (string); \
-    printf("%s", __string_to_print->slice); \
-    printf("\n"); \
-    del(String, __string_to_print); \
-} while (0)
-
-#define NEW_NULL_STRING (new(String, "<NULL>"))
 
 // Static Methods
 

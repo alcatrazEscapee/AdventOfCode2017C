@@ -47,7 +47,7 @@ TEST(test_array_hash_map_format, {
     ArrayHashMap* map = new(ArrayHashMap, 10, class(Int32), class(Int32));
 
     String* s1 = format(ArrayHashMap, map);
-    ASSERT_TRUE(str_equals_content(s1, "ArrayHashMap{}"), "Actual: '%s'", s1->slice);
+    ASSERT_TRUE(str_equals_content(s1, "ArrayHashMap<Int32, Int32>{}"), "Actual: '%s'", s1->slice);
     del(String, s1);
 
     ahm_put(map, new(Int32, 0), new(Int32, 1234));
@@ -55,7 +55,7 @@ TEST(test_array_hash_map_format, {
 
     // Technically this is unordered, but since we know Int32's hash function for positive integers it itself, we can consider this a test
     String* s2 = format(ArrayHashMap, map);
-    ASSERT_TRUE(str_equals_content(s2, "ArrayHashMap{(0: 1234), (1: 4321)}"), "Actual: '%s'", s2->slice);
+    ASSERT_TRUE(str_equals_content(s2, "ArrayHashMap<Int32, Int32>{0: 1234, 1: 4321}"), "Actual: '%s'", s2->slice);
     del(String, s2);
 
     del(ArrayHashMap, map);

@@ -4,7 +4,7 @@
 
 DERIVE_CLASS(Vec2i);
 
-Vec2i* constructor(Vec2i)(int32_t x, int32_t y)
+Vec2i* Vec2i__new(int32_t x, int32_t y)
 {
     Vec2i* p = malloc(sizeof(Vec2i));
     PANIC_IF_NULL(p, "Unable to create Vec2i (%d, %d)", x, y);

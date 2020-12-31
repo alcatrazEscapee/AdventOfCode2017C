@@ -2,21 +2,15 @@
 // Types: int32_t*, int64_t*
 // Represents a boxed (heap allocated) integer
 
+#include "../common.h"
+
 #ifndef INTEGER_H
 #define INTEGER_H
 
-#include <stdio.h> // printf, etc.
-#include <stdlib.h> // malloc, free
-#include <stdint.h> // int32_t, etc.
-#include <stdbool.h> // true, false, bool
-
-#include "../class.h"
-#include "../strings.h"
-
-int32_t* constructor(Int32)(int32_t value);
+int32_t* Int32__new(int32_t value);
 DERIVE_CLASS_HEADER(Int32, int32_t*);
 
-int64_t* constructor(Int64)(int64_t value);
+int64_t* Int64__new(int64_t value);
 DERIVE_CLASS_HEADER(Int64, int64_t*);
 
 #endif

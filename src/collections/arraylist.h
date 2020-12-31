@@ -1,29 +1,19 @@
 // Defines a generic ArrayList data structure
 
+#include "../common.h"
+
 #ifndef ARRAY_LIST_H
 #define ARRAY_LIST_H
 
-#include <stdio.h> // printf, etc.
-#include <stdlib.h> // malloc, free
-#include <stdint.h> // int32_t, etc.
-#include <stdbool.h> // true, false, bool
-#include <string.h> // memcpy
-
 struct ArrayList__struct;
 
-#include "../class.h"
-
-typedef struct ArrayList__struct {
+typedef struct ArrayList__struct
+{
     void** values; // Backing array
     Class* value_class; // Values class
     uint32_t size; // Length of backing array
     /* public readonly */ uint32_t length; // Size of filled elements
 } ArrayList;
-
-#include "../utils.h"
-#include "../panic.h"
-#include "../strings.h"
-
 
 // Constructor / Destructor
 ArrayList* ArrayList__new(uint32_t initial_size, Class* value_class);
@@ -32,6 +22,19 @@ void ArrayList__del(ArrayList* arl);
 String* ArrayList__format(ArrayList* arl);
 
 // Iterator
+
+typedef struct
+{
+    uint32_t index;
+    void* value;
+} Iterator(ArrayList);
+
+Iterator(ArrayList)* ArrayList__iterator__new(ArrayList* list);
+void ArrayList__iterator__del(Iterator(ArrayList)* it);
+
+#define ArrayList__iterator__test(it, list) (it)->index < (list)->length
+#define ArrayList__iterator__next(it, list) (it)->index ++
+
 // Leaks the value outside the iterator scope
 #define ArrayList__iter(type, array, i, v) type v = 0; for (uint32_t i = 0; (i < (array)->length ? (v = (type) (array)->values[i]), true : false); i++)
 

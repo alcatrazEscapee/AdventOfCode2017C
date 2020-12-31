@@ -28,27 +28,27 @@ void IntArrayList__del(IntArrayList* arl)
 IntArrayList* IntArrayList__copy(IntArrayList* list)
 {
     IntArrayList* new_list = new(IntArrayList, list->length);
-    iter(IntArrayList, list, i, v)
+    for iter(IntArrayList, it, list)
     {
-        new_list->values[i] = v;
+        new_list->values[it->index] = it->value;
     }
     new_list->length = list->length;
     return new_list;
 }
 
-String* IntArrayList__format(IntArrayList* arl)
+String* IntArrayList__format(IntArrayList* list)
 {
     String* s = new(String, "IntArrayList{");
-    if (arl->length == 0)
+    if (list->length == 0)
     {
         str_append_char(s, '}');
         return s;
     }
     else
     {
-        iter(IntArrayList, arl, i, value)
+        for iter(IntArrayList, it, list)
         {
-            str_append_string(s, str_format("%d", value));
+            str_append_string(s, str_format("%d", it->value));
             str_append_slice(s, ", ");
         }
     }
@@ -56,6 +56,28 @@ String* IntArrayList__format(IntArrayList* arl)
     str_append_char(s, '}');
     return s;
 }
+
+
+// Iterator
+
+Iterator(IntArrayList)* IntArrayList__iterator__new(IntArrayList* list)
+{
+    Iterator(IntArrayList)* it = malloc(sizeof(Iterator(IntArrayList)));
+    PANIC_IF_NULL(it, "Unable to create Iterator<IntArrayList>");
+
+    it->index = 0;
+    it->value = 0;
+
+    return it;
+}
+
+void IntArrayList__iterator__del(Iterator(IntArrayList)* it)
+{
+    free(it);
+}
+
+
+// Instance Methods
 
 bool ial_in(IntArrayList* arl, uint32_t index)
 {

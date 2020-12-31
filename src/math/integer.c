@@ -5,7 +5,7 @@
 DERIVE_CLASS(Int32); // Class
 DERIVE_CLASS_IMPL_ALL(Int32, int32_t*); // Implement Equals, Compare, Copy, Del
 
-int32_t* constructor(Int32)(int32_t value) // Constructor
+int32_t* Int32__new(int32_t value) // Constructor
 {
     int32_t* p = malloc(sizeof(int32_t));
     PANIC_IF_NULL(p, "Unable to create Int32");
@@ -28,7 +28,7 @@ String* Int32__format(int32_t* p) // Format
 DERIVE_CLASS(Int64); // Class
 DERIVE_CLASS_IMPL_ALL(Int64, int64_t*);
 
-int64_t* constructor(Int64)(int64_t value)
+int64_t* Int64__new(int64_t value)
 {
     int64_t* p = malloc(sizeof(int64_t));
     PANIC_IF_NULL(p, "Unable to create Int64");

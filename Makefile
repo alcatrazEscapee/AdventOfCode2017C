@@ -25,8 +25,7 @@ INCLUDE = \
 	src/math/integer.h \
 	src/math/vectors.h \
 	src/days/aoc.h \
-	src/class.h \
-	src/panic.h \
+	src/common.h \
 	src/sorting.h \
 	src/strings.h \
 	src/utils.h \

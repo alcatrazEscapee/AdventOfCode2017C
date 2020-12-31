@@ -2,29 +2,29 @@
 // Has O(1) contains checks (ahs_in)
 // Implemented using an ArrayHashMap with NULL values
 
+#include "../common.h"
+#include "arrayhashmap.h"
+
 #ifndef ARRAY_HASH_SET_H
 #define ARRAY_HASH_SET_H
 
-#include <stdio.h> // printf, etc.
-#include <stdlib.h> // malloc, free
-#include <stdint.h> // int32_t, etc.
-#include <stdbool.h> // true, false, bool
-#include <string.h> // memcpy
-
-#include "../class.h"
-#include "../utils.h"
-#include "../panic.h"
-#include "../void.h"
-
-#include "arrayhashmap.h"
-
-typedef struct ArrayHashMap__struct ArrayHashSet;
+// A set is just a map in disguise
+typedef ArrayHashMap ArrayHashSet;
+typedef Iterator(ArrayHashMap) Iterator(ArrayHashSet);
 
 // Constructor / Destructor
 ArrayHashSet* ArrayHashSet__new(uint32_t initial_size, Class* key_class);
 void ArrayHashSet__del(ArrayHashSet* set);
 
 String* ArrayHashSet__format(ArrayHashSet* set);
+
+// Iterator
+
+#define ArrayHashSet__iterator__new(map) ArrayHashMap__iterator__new(map)
+#define ArrayHashSet__iterator__del(map) ARrayHashMap__iterator__del(map)
+#define ArrayHashSet__iterator__test(it, map) ArrayHashMap__iterator__test(it, map)
+#define ArrayHAshSet__iterator__next(it, map) ArrayHashMap__iterator__next(it, map)
+
 
 // Public Instance Methods - these all borrow the map
 
@@ -35,8 +35,5 @@ bool ahs_put(ArrayHashSet* set, void* key);
 bool ahs_in(ArrayHashSet* set, void* key);
 
 void ahs_clear(ArrayHashSet* set);
-
-// Iterator
-#define ArrayHashSet__iter(set, type, entry, value) type value = NULL; for (ArrayHashMapEntry* entry = NULL; ahm_iter_next_entry((set)->map, &entry), value = entry->value, entry != NULL;)
 
 #endif
