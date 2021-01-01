@@ -171,26 +171,6 @@ String* String__format(String* instance) // Format
     return copy(String, instance);
 }
 
-
-// String Iterator
-/*
-Iterator(String)* String__iterator__new(String* string)
-{
-    Iterator(String)* it = malloc(sizeof(Iterator(String)));
-    PANIC_IF_NULL(it, "Unable to create Iterator<String> for String '%s'", string->slice);
-
-    it->index = 0;
-    it->value = '\0';
-
-    return it;
-}
-
-void String__iterator__del(Iterator(String)* it)
-{
-    free(it);
-}
-*/
-
 // Instance Methods
 
 void str_append_char(String* string, char c)

@@ -117,6 +117,60 @@ TEST(test_int_array_list_clear, {
     del(IntArrayList, list);
 });
 
+TEST(test_int_array_list_equals, {
+    IntArrayList* list = new(IntArrayList, 10);
+    ial_append(list, 3);
+    ial_append(list, 6);
+    ial_append(list, 2);
+
+    IntArrayList* other = copy(IntArrayList, list);
+
+    ASSERT_TRUE(equals(IntArrayList, list, other), "Copy should be equal");
+
+    ial_append(list, 5);
+
+    ASSERT_FALSE(equals(IntArrayList, list, other), "Inequal sizes should not be equal");
+    ASSERT_FALSE(equals(IntArrayList, other, list), "Inequal sizes should not be equal"); // Reverse order
+
+    ial_append(other, 6);
+
+    ASSERT_FALSE(equals(IntArrayList, list, other), "Lists with different content should not be equal");
+
+    del(IntArrayList, list);
+    del(IntArrayList, other);
+});
+
+TEST(test_int_array_list_compare, {
+    IntArrayList* first = new(IntArrayList, 10);
+    IntArrayList* second = new(IntArrayList, 10);
+    IntArrayList* third = new(IntArrayList, 10);
+
+    ial_append(first, 3);
+
+    ASSERT_EQUAL(compare(IntArrayList, first, second), 1, "Array list with more elements should be larger");
+    ASSERT_EQUAL(compare(IntArrayList, second, first), -1, "Array list with more elements should be larger"); // Reverse order
+    ASSERT_EQUAL(compare(IntArrayList, second, third), 0, "Copy should be equal");
+
+    ial_append(second, 5);
+
+    ASSERT_EQUAL(compare(IntArrayList, first, second), -1, "Smaller elements should be smaller");
+
+    ial_append(first, 3);
+    ial_append(second, 1);
+    ial_append(third, 3);
+    ial_append(third, 5);
+
+    // First: [3, 3], Second: [5, 3], Third: [3, 5]
+
+    ASSERT_EQUAL(compare(IntArrayList, first, second), -1, "Earlier smaller elements should be smaller");
+    ASSERT_EQUAL(compare(IntArrayList, first, third), -1, "Earlier smaller elements should be smaller");
+    ASSERT_EQUAL(compare(IntArrayList, second, third), 1, "Earlier smaller elements should be smaller");
+
+    del(IntArrayList, first);
+    del(IntArrayList, second);
+    del(IntArrayList, third);
+});
+
 TEST_GROUP(test_int_array_list_main, {
     test_int_array_list_new();
     test_int_array_list_copy();
@@ -125,4 +179,6 @@ TEST_GROUP(test_int_array_list_main, {
     test_int_array_list_resize();
     test_int_array_list_iterator();
     test_int_array_list_clear();
+    test_int_array_list_equals();
+    test_int_array_list_compare();
 });

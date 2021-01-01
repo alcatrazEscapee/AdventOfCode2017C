@@ -2,7 +2,23 @@
 
 #include "intarraylist.h"
 
-// Constructor
+// Static Methods
+
+IntArrayList* ial_create_from_array(int32_t* array, uint32_t size)
+{
+    IntArrayList* list = new(IntArrayList, size);
+    for (uint32_t i = 0; i < size; i++)
+    {
+        list->values[i] = array[i];
+    }
+    list->length = size;
+    return list;
+}
+
+// Class
+DERIVE_CLASS(IntArrayList);
+
+// Class Methods
 IntArrayList* IntArrayList__new(uint32_t initial_size)
 {
     PANIC_IF(initial_size < 1, "IntArrayList initial size must be positive, got %d", initial_size);
@@ -20,7 +36,6 @@ IntArrayList* IntArrayList__new(uint32_t initial_size)
     return p;
 }
 
-// Destructor
 void IntArrayList__del(IntArrayList* arl)
 {
     free(arl->values);
@@ -57,6 +72,59 @@ String* IntArrayList__format(IntArrayList* list)
     str_pop(s, 2); // Pop the last ', '
     str_append_char(s, '}');
     return s;
+}
+
+bool IntArrayList__equals(IntArrayList* left, IntArrayList* right)
+{
+    if (left->length != right->length)
+    {
+        return false;
+    }
+    for (uint32_t i = 0; i < left->length; i++)
+    {
+        if (left->values[i] != right->values[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+uint32_t IntArrayList__hash(IntArrayList* instance)
+{
+    uint32_t h = 1;
+    for iter(IntArrayList, it, instance)
+    {
+        h = (31 * h + (uint32_t) it.value);
+    }
+    return h;
+}
+
+int32_t IntArrayList__compare(IntArrayList* left, IntArrayList* right)
+{
+    uint32_t min_length = min(left->length, right->length);
+    for (uint32_t i = 0; i < min_length; i++)
+    {
+        int32_t left_val = left->values[i];
+        int32_t right_val = right->values[i];
+        if (left_val < right_val)
+        {
+            return -1;
+        }
+        else if (left_val > right_val)
+        {
+            return 1;
+        }
+    }
+    if (left->length < right->length)
+    {
+        return -1;
+    }
+    else if (left->length > right->length)
+    {
+        return 1;
+    }
+    return 0;
 }
 
 // Instance Methods

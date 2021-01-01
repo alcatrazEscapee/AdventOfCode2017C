@@ -1,9 +1,9 @@
 // Common header file for all AoC puzzles
 
+#include "../common.h"
+
 #ifndef AOC_H
 #define AOC_H
-
-#include "../common.h"
 
 // Utils for consistient answers
 #define ANSWER_INT(day, part, expected, actual) printf("Day %02d Part %d: Expected %d, Actual %d, Status = %s\n", day, part, expected, actual, ((expected) == (actual)) ? "Passed" : "Failed")

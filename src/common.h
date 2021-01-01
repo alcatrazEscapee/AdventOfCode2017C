@@ -145,6 +145,8 @@ typedef struct String__struct* (*FnFormat) (void*);
 #define compare_le_c(cls, left, right) (compare_c(cls, left, right) <= 0)
 #define compare_ge_c(cls, left, right) (compare_c(cls, left, right) >= 0)
 
+// Rust style loop statements
+#define loop while (true)
 
 // Iterators
 //

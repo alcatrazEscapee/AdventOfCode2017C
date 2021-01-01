@@ -1,24 +1,22 @@
-// Defines a simple IntArrayList data structure
+// An ArrayList<int32_t>
+// Implemented as a class and can be used as a Tuple<int32_t>
+// Automatically resizable - is initialized with exactly the original size
 
 #include "../common.h"
 
 #ifndef INT_ARRAY_LIST_H
 #define INT_ARRAY_LIST_H
 
-struct IntArrayList__struct;
-
-typedef struct IntArrayList__struct {
+typedef struct
+{
     int32_t* values; // Backing array
     uint32_t size; // Length of backing array
     /* public readonly */ uint32_t length; // Size of filled elements
 } IntArrayList;
 
-// Constructor / Destructor
+// Class
 IntArrayList* IntArrayList__new(uint32_t initial_size);
-void IntArrayList__del(IntArrayList* arl);
-IntArrayList* IntArrayList__copy(IntArrayList* arl);
-
-String* IntArrayList__format(IntArrayList* arl);
+DERIVE_CLASS_HEADER(IntArrayList, IntArrayList*);
 
 // Iterator
 typedef struct
@@ -31,6 +29,9 @@ typedef struct
 #define IntArrayList__iterator__test(it, list) (it)->index < (list)->length ? (it)->value = (list)->values[(it)->index], true : false
 #define IntArrayList__iterator__next(it, list) (it)->index ++
 
+// Static Methods
+
+IntArrayList* ial_create_from_array(int32_t* array, uint32_t size);
 
 // Public Instance Methods - these all borrow the list
 
