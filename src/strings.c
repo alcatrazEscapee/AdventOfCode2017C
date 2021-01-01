@@ -251,7 +251,6 @@ bool str_equals_content(String* string, char* static_string)
         // Not equal at position i
         if (static_string[it.index] == '\0' || it.value != static_string[it.index])
         {
-            //del_iter(String, it); // Need to cleanup the iterator as we never complete the loop normally
             return false;
         }
     }

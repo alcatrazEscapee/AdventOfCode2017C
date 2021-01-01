@@ -155,23 +155,22 @@ typedef struct String__struct* (*FnFormat) (void*);
 //
 // It can be used in place of the condition on a for loop:
 // for iter(Class, it, other args...) {
-//     it->value
+//     it.value
 // }
 //
-// The iterator struct itself is automatically deleted once it goes out of scope of the loop (via clever use of (x ? true : y(), false) semantics)
-// Note: if the loop is exited early (through use of return or break), the iterator must be manually cleaned up via del_iter(cls, it)
+// The iterator struct itself is stack allocated and does not need to be cleaned up.
 // In order to define an iterator of type T, the following methods (or macro equivilants) are required:
-// Iterator(T) T__iterator__new(args...)
+// Iterator(T) T__iterator__start(args...)
 // bool T__iterator__test(Iterator(T)* it, args...)
 // void T__iterator__next(Iterator(T)* it, args...)
 //
 // Additionally, for generic collections, the following variant can be used:
 // for type_iter(Class, Type, other args...) {
 //     it.parent = an Iterator(Class)
-//     it.value = the same as it.parent.value, but as Type.
+//     it.value = the same as it.parent.value, but as Type
 // }
 // This allows iteration over generic data structures without first casting or storing the value (often a void*) down to the desired type.
-// For instance, iterating over an ArrayList<String> with iter() would require ((String*) it.value).length, but with type_iter(), it can be referenced as it.value->length
+// For instance, iterating over an ArrayList<String> with iter() would require ((String*) it.value)->length, but with type_iter(), it can be referenced as it.value->length
 
 #define Iterator(cls) cls ## __iterator
 
