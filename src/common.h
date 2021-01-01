@@ -62,6 +62,7 @@
 #include <string.h> // memcpy
 #include <stdarg.h> // Varargs
 #include <limits.h> // INT_MIN, INT_MAX
+#include <time.h> // time
 
 // Common Structs
 // Dependencies: None
@@ -146,30 +147,48 @@ typedef struct String__struct* (*FnFormat) (void*);
 
 
 // Iterators
+//
 // An iterator over a collection of elements of type T is a struct of at least the following:
-// struct {
+// typedef struct {
 //     T value;  
-// }
+// } Iterator(T)
+//
 // It can be used in place of the condition on a for loop:
 // for iter(Class, it, other args...) {
 //     it->value
 // }
+//
 // The iterator struct itself is automatically deleted once it goes out of scope of the loop (via clever use of (x ? true : y(), false) semantics)
+// Note: if the loop is exited early (through use of return or break), the iterator must be manually cleaned up via del_iter(cls, it)
 // In order to define an iterator of type T, the following methods (or macro equivilants) are required:
 // Iterator(T) T__iterator__new(args...)
 // bool T__iterator__test(Iterator(T)* it, args...)
 // void T__iterator__next(Iterator(T)* it, args...)
+//
+// Additionally, for generic collections, the following variant can be used:
+// for type_iter(Class, Type, other args...) {
+//     it.parent = an Iterator(Class)
+//     it.value = the same as it.parent.value, but as Type.
+// }
+// This allows iteration over generic data structures without first casting or storing the value (often a void*) down to the desired type.
+// For instance, iterating over an ArrayList<String> with iter() would require ((String*) it.value).length, but with type_iter(), it can be referenced as it.value->length
 
-#define iter(cls, it, args...) ( \
-    Iterator(cls)* it = cls ## __iterator__new(args); \
-    cls ## __iterator__test(it, args) ? true : (cls ## __iterator__del(it), false); \
-    cls ## __iterator__next(it, args))
+#define Iterator(cls) cls ## __iterator
 
 // Since del(Iterator(Class), ...) will not work due to macro restrictions.
 // This sometimes has to be called from user code, e.g. if you break early from an iterator loop
 #define del_iter(cls, it) cls ## __iterator__del(it)
 
-#define Iterator(cls) cls ## __iterator
+
+#define iter(cls, it, args...) ( \
+    Iterator(cls) it = cls ## __iterator__start(args); \
+    (cls ## __iterator__test(&it, args)); \
+    (cls ## __iterator__next(&it, args)))
+
+#define type_iter(cls, type, it, args...) ( \
+    struct { Iterator(cls) parent; type value; } it = { cls ## __iterator__start(args), NULL }; \
+    (cls ## __iterator__test(&(it.parent), args)) ? ((it.value = (type) it.parent.value), true) : (false); \
+    (cls ## __iterator__next(&(it.parent), args)))
 
 
 // Class Headers
@@ -257,25 +276,11 @@ String* cls ## __format(type instance) \
 }
 
 
-// String Macros
-
-#define NULL_STRING (new(String, "<NULL>"))
-#define EMPTY_STRING (new(String, ""))
-
-#define println(args...) do { \
-    printf(args); \
-    printf("\n"); \
-} while (0)
-
-
 // Generic Simple Function-Like Macros
 
 #define abs(x) ((x) < 0 ? -(x) : (x))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
-
-// Some other random things
-#define NOOP (void)0
 
 
 // Panics
@@ -284,7 +289,7 @@ String* cls ## __format(type instance) \
 // These are modeled after Rust's panic!() macro
 
 #define PANIC(args...) do { println("PANIC!"); println(args); exit(1); } while (0)
-#define PANIC_IF(condition, args...) do { if (!(value)) { println("PANIC! Condition %s is false!", #condition); println(args); exit(1); }} while (0)
+#define PANIC_IF(condition, args...) do { if (condition) { println("PANIC! Condition %s is false!", #condition); println(args); exit(1); }} while (0)
 #define PANIC_IF_NULL(value, args...) do { if (value == NULL) { println("PANIC! %s is NULL!", #value); println(args); exit(1); }} while (0)
 
 // Inclusion of library macros

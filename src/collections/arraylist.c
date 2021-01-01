@@ -27,6 +27,17 @@ void ArrayList__del(ArrayList* arl)
     free(arl);
 }
 
+ArrayList* ArrayList__copy(ArrayList* list)
+{
+    ArrayList* new_list = new(ArrayList, list->length, list->value_class);
+    for iter(ArrayList, it, list)
+    {
+        new_list->values[it.index] = copy_c(list->value_class, it.value);
+    }
+    new_list->length = list->length;
+    return new_list;
+}
+
 String* ArrayList__format(ArrayList* list)
 {
     String* s = new(String, "ArrayList{");
@@ -39,7 +50,7 @@ String* ArrayList__format(ArrayList* list)
     {
         for iter(ArrayList, it, list)
         {
-            str_append_string(s, format_c(list->value_class, it->value));
+            str_append_string(s, format_c(list->value_class, it.value));
             str_append_slice(s, ", ");
         }
     }
@@ -47,26 +58,6 @@ String* ArrayList__format(ArrayList* list)
     str_append_char(s, '}');
     return s;
 }
-
-
-// Iterator
-
-Iterator(ArrayList)* ArrayList__iterator__new(ArrayList* list)
-{
-    Iterator(ArrayList)* it = malloc(sizeof(Iterator(ArrayList)));
-    PANIC_IF_NULL(it, "Unable to create Iterator<ArrayList<%s>>", list->value_class->name);
-
-    it->index = 0;
-    it->value = 0;
-
-    return it;
-}
-
-void ArrayList__iterator__del(Iterator(ArrayList)* it)
-{
-    free(it);
-}
-
 
 // Instance Methods
 
@@ -84,6 +75,11 @@ void* al_get(ArrayList* arl, uint32_t index)
 void al_set(ArrayList* arl, uint32_t index, void* value)
 {
     if (!al_in(arl, index)) PANIC("Index %d is outside of the valid range [0, %d) at al_set(ArrayList*, int32_t)\n", index, arl->length);
+    void* prev = arl->values[index];
+    if (prev != NULL)
+    {
+        del_c(arl->value_class, prev); // Overwriting a previous value, so must delete it
+    }
     arl->values[index] = value;
 }
 
@@ -112,7 +108,7 @@ void al_clear(ArrayList* list)
 {
     for iter(ArrayList, it, list)
     {
-        del_c(list->value_class, it->value);
+        del_c(list->value_class, it.value);
     }
     list->length = 0;
 }

@@ -1,7 +1,4 @@
 
-#include "../../src/collections/arrayhashmap.h"
-#include "../../src/math/integer.h"
-
 TEST(test_array_hash_map_new, {
     ArrayHashMap* map = new(ArrayHashMap, 10, class(Int32), class(Int32));
     del(ArrayHashMap, map);

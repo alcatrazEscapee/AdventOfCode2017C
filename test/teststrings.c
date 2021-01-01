@@ -1,6 +1,3 @@
-// Tests for strings.c, strings.h
-
-#include "../src/strings.h"
 
 TEST(test_strings_str_format, {
     String* s1 = str_format("test format %d", 100);

@@ -18,18 +18,25 @@ typedef struct
     char value;
 } Iterator(String);
 
-Iterator(String)* String__iterator__new(String* string);
-void String__iterator__del(Iterator(String)* it);
-
+#define String__iterator__start(string) { 0, '\0' }
 #define String__iterator__test(it, string) (it)->index < (string)->length ? ((it)->value = (string)->slice[(it)->index], true) : false
 #define String__iterator__next(it, string) (it)->index++
 
+#define NULL_STRING (new(String, "<NULL>"))
+#define EMPTY_STRING (new(String, ""))
+
+
+// String-Adjacent Methods
+
+void println(char* format_string, ...); // printf, but with a '\n' appended to the output
+
+void str_print(String* string); // Destructive printing of a string. For non-destructive behavior, write printf("%s", string->slice);
+void str_println(String* string); // Destructive printing of a string. For non-destructive behavor, write println("%s\n", string->slice);
 
 // Static Methods
 
-// Formats a string safely, without resulting in buffer overflows or other stupid behavior
-String* str_format(char* format_string, ...);
-String* str_create_with_length(uint32_t initial_length);
+String* str_format(char* format_string, ...); // Formats using printf-style formatting to an output string
+String* str_create_with_length(uint32_t initial_length); // Creates an empty string with at least the specified length
 
 uint32_t str_slice_len(char* slice);
 

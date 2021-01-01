@@ -41,7 +41,7 @@ int main(void)
     int32_t max_value = 0;
 
     Vec2i* q = new(Vec2i, 0, 0);
-    ArrayHashMap* points = new(ArrayHashMap, 32, class(Vec2i), class(Int32));
+    ArrayHashMap* points = new(ArrayHashMap, 4, class(Vec2i), class(Int32));
     ahm_put(points, copy(Vec2i, p), new(Int32, 1));
 
     for (uint32_t i = 2; max_value <= INPUT; i++)

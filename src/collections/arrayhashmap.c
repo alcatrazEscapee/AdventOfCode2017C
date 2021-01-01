@@ -12,11 +12,8 @@ ArrayHashMap* ArrayHashMap__new(uint32_t initial_size, Class* key_class, Class* 
     PANIC_IF_NULL(key_array, "Unable to create ArrayHashMap with initial_size %d", initial_size);
     PANIC_IF_NULL(value_array, "Unable to create ArrayHashMap with initial_size %d", initial_size);
 
-    for (uint32_t i = 0; i < initial_size; i++)
-    {
-        key_array[i] = NULL;
-        value_array[i] = NULL;
-    }
+    fill_array_nulls(key_array, initial_size);
+    fill_array_nulls(value_array, initial_size);
 
     map->keys = key_array;
     map->values = value_array;
@@ -32,8 +29,8 @@ void ArrayHashMap__del(ArrayHashMap* map)
 {
     for iter(ArrayHashMap, it, map)
     {
-        del_c(map->key_class, it->key);
-        del_c(map->value_class, it->value);
+        del_c(map->key_class, it.key);
+        del_c(map->value_class, it.value);
     }
     free(map->keys);
     free(map->values);
@@ -56,9 +53,9 @@ String* ArrayHashMap__format(ArrayHashMap* map)
     {
         for iter(ArrayHashMap, it, map)
         {
-            str_append_string(s, format_c(map->key_class, it->key));
+            str_append_string(s, format_c(map->key_class, it.key));
             str_append_slice(s, ": ");
-            str_append_string(s, format_c(map->value_class, it->value));
+            str_append_string(s, format_c(map->value_class, it.value));
             str_append_slice(s, ", ");
         }
     }
@@ -69,23 +66,6 @@ String* ArrayHashMap__format(ArrayHashMap* map)
 
 
 // Iterator
-
-Iterator(ArrayHashMap)* ArrayHashMap__iterator__new(ArrayHashMap* map)
-{
-    Iterator(ArrayHashMap)* it = malloc(sizeof(Iterator(ArrayHashMap)));
-    PANIC_IF_NULL(it, "Unable to create Iterator<ArrayHashMap>");
-
-    it->index = 0;
-    it->key = NULL;
-    it->value = NULL;
-
-    return it;
-}
-
-void ArrayHashMap__iterator__del(Iterator(ArrayHashMap)* it)
-{
-    free(it);
-}
 
 bool ArrayHashMap__iterator__test(Iterator(ArrayHashMap)* it, ArrayHashMap* map)
 {
@@ -107,13 +87,14 @@ bool ArrayHashMap__iterator__test(Iterator(ArrayHashMap)* it, ArrayHashMap* map)
 
 bool ahm_put(ArrayHashMap* map, void* key, void* value)
 {
-    uint32_t mask = (map->size - 1);
-
     // In order to gaurentee proper map function, the map must have always at least one empty entry
     // This means we need to re-hash the map when inserting at specific sizes
-    // For now, just panic if this invariant would be violated
-    PANIC_IF((map->length + 1) == map->size, "ArrayHashMap needs to be rehashed! It is currently %d / %d", map->length, map->size);
+    if (map->length + 1 >= (uint32_t) (LOAD_FACTOR * map->size))
+    {
+        ahm_rehash(map);
+    }
 
+    uint32_t mask = (map->size - 1);
     uint32_t index = hash_c(map->key_class, key) & mask;
     void* current_key = map->keys[index];
 
@@ -159,7 +140,7 @@ void* ahm_get(ArrayHashMap* map, void* key)
         {
             return map->values[index]; // Key match
         }
-        index = (index + 1) & mask;
+        index = (index + 31) & mask;
         current_key = map->keys[index];
     }
     return NULL; // No match
@@ -169,8 +150,52 @@ void ahm_clear(ArrayHashMap* map)
 {
     for iter(ArrayHashMap, it, map)
     {
-        del_c(map->key_class, it->key);
-        del_c(map->value_class, it->value);
+        del_c(map->key_class, it.key);
+        del_c(map->value_class, it.value);
+
+        // Keys need to be nulled as they are checked against null for existance
+        // Values only exist with a non-null key, so they don't need to be nulled.
+        map->keys[it.index] = NULL;
     }
     map->length = 0;
+}
+
+
+// Private Methods
+
+void ahm_rehash(ArrayHashMap* map)
+{
+    // Save a reference to the existing keys and values arrays
+    void** old_keys = map->keys;
+    void** old_values = map->values;
+    uint32_t old_size = map->size;
+    uint32_t new_size = old_size << 1;
+
+    // Reallocate the new arrays
+    map->keys = malloc(sizeof(void*) * new_size);
+    map->values = malloc(sizeof(void*) * new_size);
+
+    PANIC_IF_NULL(map->keys, "Unable to rehash ArrayHashMap");
+    PANIC_IF_NULL(map->values, "Unable to rehash ArrayHashMap");
+
+    fill_array_nulls(map->keys, new_size);
+    fill_array_nulls(map->values, new_size);
+
+    // Set the map to empty
+    map->size = new_size;
+    map->length = 0;
+
+    // Insert all old values
+    for (uint32_t index = 0; index < old_size; index++)
+    {
+        void* old_key = old_keys[index];
+        if (old_key != NULL)
+        {
+            ahm_put(map, old_key, old_values[index]);
+        }
+    }
+
+    // Free now-unused old keys and values arrays
+    free(old_keys);
+    free(old_values);
 }

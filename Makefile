@@ -49,6 +49,8 @@ SRC = \
 # However, we still need to track them for modifications so we know when to re-make the test binary
 TEST_SRC = \
 	test/collections/testarrayhashmap.c \
+	test/collections/testarraylist.c \
+	test/collections/testintarraylist.c \
 	test/math/testinteger.c \
 	test/teststrings.c \
 	test/unittest.c

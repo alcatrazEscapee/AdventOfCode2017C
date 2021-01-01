@@ -27,9 +27,7 @@ typedef struct
     int32_t value;
 } Iterator(IntArrayList);
 
-Iterator(IntArrayList)* IntArrayList__iterator__new(IntArrayList* list);
-void IntArrayList__iterator__del(Iterator(IntArrayList)* it);
-
+#define IntArrayList__iterator__start(list) { 0, 0 }
 #define IntArrayList__iterator__test(it, list) (it)->index < (list)->length ? (it)->value = (list)->values[(it)->index], true : false
 #define IntArrayList__iterator__next(it, list) (it)->index ++
 

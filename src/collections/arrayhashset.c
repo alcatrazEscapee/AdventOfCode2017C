@@ -22,9 +22,9 @@ String* ArrayHashSet__format(ArrayHashSet* set)
     }
     else
     {
-        for iter(ArrayHashMap, it, set)
+        for iter(ArrayHashSet, it, set)
         {
-            str_append_string(s, format_c(set->key_class, it->key));
+            str_append_string(s, format_c(set->key_class, it.key));
             str_append_slice(s, ", ");
         }
     }

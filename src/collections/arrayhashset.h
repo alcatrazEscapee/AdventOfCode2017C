@@ -20,10 +20,9 @@ String* ArrayHashSet__format(ArrayHashSet* set);
 
 // Iterator
 
-#define ArrayHashSet__iterator__new(map) ArrayHashMap__iterator__new(map)
-#define ArrayHashSet__iterator__del(map) ARrayHashMap__iterator__del(map)
+#define ArrayHashSet__iterator__start(map) ArrayHashMap__iterator__start(map)
 #define ArrayHashSet__iterator__test(it, map) ArrayHashMap__iterator__test(it, map)
-#define ArrayHAshSet__iterator__next(it, map) ArrayHashMap__iterator__next(it, map)
+#define ArrayHashSet__iterator__next(it, map) ArrayHashMap__iterator__next(it, map)
 
 
 // Public Instance Methods - these all borrow the map

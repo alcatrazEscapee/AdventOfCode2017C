@@ -9,29 +9,30 @@ int main(void)
     del(String, input);
 
     int part1 = 0, part2 = 0;
-    iter(ArrayList, String*, lines, i, line)
+    for iter(ArrayList, line_it, lines)
     {
-        ArrayList* values = str_split_whitespace(line);
-        iter(ArrayList, String*, values, j, substr)
+        ArrayList* values = str_split_whitespace(line_it.value);
+        for iter(ArrayList, it, values)
         {
-            ial_append(array, str_parse_int32(substr));
+            ial_append(array, str_parse_int32(it.value));
         }
         del(ArrayList, values);
 
         // Part 1 - calculate the difference between max and min in each line
         int32_t min_value = INT_MAX, max_value = INT_MIN;
-        iter(IntArrayList, array, i, next)
+        for iter(IntArrayList, it, array)
         {
-            min_value = min(min_value, next);
-            max_value = max(max_value, next);
+            min_value = min(min_value, it.value);
+            max_value = max(max_value, it.value);
         }
         part1 += max_value - min_value;
 
         // Part 2 - find the only two numbers which divide one another, and find the quotient
-        iter(IntArrayList, array, i, a)
+        for iter(IntArrayList, ix, array)
         {
-            iter(IntArrayList, array, j, b)
+            for iter(IntArrayList, iy, array)
             {
+                int32_t a = ix.value, b = iy.value;
                 if (a != b && a > b && a % b == 0)
                 {
                     part2 += a / b;

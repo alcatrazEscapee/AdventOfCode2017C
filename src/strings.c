@@ -1,5 +1,28 @@
 #include "strings.h"
 
+// String-Adjacent Methods
+
+void println(char* format_string, ...)
+{
+    va_list arg;
+    va_start(arg, format_string);
+    vprintf(format_string, arg);
+    va_end(arg);
+    printf("\n");
+}
+
+void str_print(String* string)
+{
+    printf("%s", string->slice);
+    del(String, string);
+}
+
+void str_println(String* string)
+{
+    printf("%s\n", string->slice);
+    del(String, string);
+}
+
 // Static Methods - String Formatting
 
 String* str_format(char* format_string, ...)
@@ -135,7 +158,7 @@ uint32_t String__hash(String* instance) // Hash
     uint32_t h = 0;
     for iter(String, it, instance)
     {
-        h = (h * 31) + (uint32_t) it->value;
+        h = (h * 31) + (uint32_t) it.value;
     }
     return h;
 }
@@ -150,7 +173,7 @@ String* String__format(String* instance) // Format
 
 
 // String Iterator
-
+/*
 Iterator(String)* String__iterator__new(String* string)
 {
     Iterator(String)* it = malloc(sizeof(Iterator(String)));
@@ -166,7 +189,7 @@ void String__iterator__del(Iterator(String)* it)
 {
     free(it);
 }
-
+*/
 
 // Instance Methods
 
@@ -226,9 +249,9 @@ bool str_equals_content(String* string, char* static_string)
     {
         // Reached the end of the static string before string, OR
         // Not equal at position i
-        if (static_string[it->index] == '\0' || it->value != static_string[it->index])
+        if (static_string[it.index] == '\0' || it.value != static_string[it.index])
         {
-            del_iter(String, it); // Need to cleanup the iterator as we never complete the loop normally
+            //del_iter(String, it); // Need to cleanup the iterator as we never complete the loop normally
             return false;
         }
     }

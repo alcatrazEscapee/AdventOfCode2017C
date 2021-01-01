@@ -8,9 +8,9 @@ int main(void)
     del(String, input);
 
     IntArrayList* code = new(IntArrayList, 1000);
-    iter(ArrayList, String*, lines, i, line)
+    for iter(ArrayList, it, lines)
     {
-        ial_append(code, str_parse_int32(line));
+        ial_append(code, str_parse_int32(it.value));
     }
 
     del(ArrayList, lines);

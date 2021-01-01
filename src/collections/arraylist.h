@@ -18,6 +18,7 @@ typedef struct ArrayList__struct
 // Constructor / Destructor
 ArrayList* ArrayList__new(uint32_t initial_size, Class* value_class);
 void ArrayList__del(ArrayList* arl);
+ArrayList* ArrayList__copy(ArrayList* arl);
 
 String* ArrayList__format(ArrayList* arl);
 
@@ -29,14 +30,9 @@ typedef struct
     void* value;
 } Iterator(ArrayList);
 
-Iterator(ArrayList)* ArrayList__iterator__new(ArrayList* list);
-void ArrayList__iterator__del(Iterator(ArrayList)* it);
-
-#define ArrayList__iterator__test(it, list) (it)->index < (list)->length
+#define ArrayList__iterator__start(list) { 0, 0 }
+#define ArrayList__iterator__test(it, list) (it)->index < (list)->length ? ((it)->value = (list)->values[(it)->index], true) : false
 #define ArrayList__iterator__next(it, list) (it)->index ++
-
-// Leaks the value outside the iterator scope
-#define ArrayList__iter(type, array, i, v) type v = 0; for (uint32_t i = 0; (i < (array)->length ? (v = (type) (array)->values[i]), true : false); i++)
 
 // Public Instance Methods - these all borrow the list
 

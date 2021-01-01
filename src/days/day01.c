@@ -8,18 +8,19 @@ int main(void)
     IntArrayList* array = new(IntArrayList, INPUT_LENGTH);
     
     str_remove_whitespace(input);
-    iter(String, input, i, c)
+    for iter(String, it, input)
     {
-        ial_append(array, c - '0');
+        ial_append(array, it.value - '0');
     }
 
     del(String, input);
 
     int32_t part1 = 0, part2 = 0;
-    iter(IntArrayList, array, i, a)
+    for iter(IntArrayList, it, array)
     {
-        int32_t b = ial_get(array, (i + 1) % array->length);
-        int32_t c = ial_get(array, (i + array->length / 2) % array->length);
+        int32_t a = it.value;
+        int32_t b = ial_get(array, (it.index + 1) % array->length);
+        int32_t c = ial_get(array, (it.index + array->length / 2) % array->length);
         if (a == b)
         {
             part1 += a;

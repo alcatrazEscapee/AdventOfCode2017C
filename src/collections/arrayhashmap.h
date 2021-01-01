@@ -30,17 +30,16 @@ String* ArrayHashMap__format(ArrayHashMap* map);
 // We still increment during next() (but do not assign key/value) in order to assign *after* the test passes, and avoid running off the end of the array.
 // Additionally, test() is called before the first next(), resulting in needing some way to identify the first iteration a priori. 
 
-typedef struct ArrayHashMap__iterator__struct
+typedef struct
 {
     uint32_t index;
     void* key;
     void* value;
 } Iterator(ArrayHashMap);
 
-Iterator(ArrayHashMap)* ArrayHashMap__iterator__new(ArrayHashMap* map);
-void ArrayHashMap__iterator__del(Iterator(ArrayHashMap)* it);
 bool ArrayHashMap__iterator__test(Iterator(ArrayHashMap)* it, ArrayHashMap* map);
 
+#define ArrayHashMap__iterator__start(map) { 0, NULL, NULL }
 #define ArrayHashMap__iterator__next(it, map) (it)->index++
 
 
@@ -57,5 +56,10 @@ void* ahm_get(ArrayHashMap* map, void* key);
 
 // Clears the map
 void ahm_clear(ArrayHashMap* map);
+
+
+// Private Methods
+
+void ahm_rehash(ArrayHashMap* map);
 
 #endif

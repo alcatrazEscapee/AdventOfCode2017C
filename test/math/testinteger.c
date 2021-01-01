@@ -1,6 +1,3 @@
-// Tests for math/integer.c, math/integer.h
-
-#include "../../src/math/integer.h"
 
 TEST(test_int32_new, {
     int32_t* i32 = new(Int32, 5);

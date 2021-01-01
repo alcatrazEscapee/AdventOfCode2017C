@@ -5,6 +5,8 @@
 // Constructor
 IntArrayList* IntArrayList__new(uint32_t initial_size)
 {
+    PANIC_IF(initial_size < 1, "IntArrayList initial size must be positive, got %d", initial_size);
+
     IntArrayList* p = (IntArrayList*) malloc(sizeof(IntArrayList));
     int32_t* values = (int32_t*) malloc(sizeof(int32_t) * initial_size);
 
@@ -30,7 +32,7 @@ IntArrayList* IntArrayList__copy(IntArrayList* list)
     IntArrayList* new_list = new(IntArrayList, list->length);
     for iter(IntArrayList, it, list)
     {
-        new_list->values[it->index] = it->value;
+        new_list->values[it.index] = it.value;
     }
     new_list->length = list->length;
     return new_list;
@@ -48,7 +50,7 @@ String* IntArrayList__format(IntArrayList* list)
     {
         for iter(IntArrayList, it, list)
         {
-            str_append_string(s, str_format("%d", it->value));
+            str_append_string(s, str_format("%d", it.value));
             str_append_slice(s, ", ");
         }
     }
@@ -56,26 +58,6 @@ String* IntArrayList__format(IntArrayList* list)
     str_append_char(s, '}');
     return s;
 }
-
-
-// Iterator
-
-Iterator(IntArrayList)* IntArrayList__iterator__new(IntArrayList* list)
-{
-    Iterator(IntArrayList)* it = malloc(sizeof(Iterator(IntArrayList)));
-    PANIC_IF_NULL(it, "Unable to create Iterator<IntArrayList>");
-
-    it->index = 0;
-    it->value = 0;
-
-    return it;
-}
-
-void IntArrayList__iterator__del(Iterator(IntArrayList)* it)
-{
-    free(it);
-}
-
 
 // Instance Methods
 

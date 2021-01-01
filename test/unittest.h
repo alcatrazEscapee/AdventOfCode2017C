@@ -111,5 +111,15 @@ do { \
     } \
 } while (0)
 
+#define ASSERT_NOT_EQUAL(left, right, args...) \
+do { \
+    if ((left) == (right)) \
+    { \
+        printf("Assert Not Equal Failed.\n\t'%s' != '%s'\n\t", #left, #right); \
+        FAIL(args); \
+        printf("\n"); \
+    } \
+} while (0)
+
 #endif
 
