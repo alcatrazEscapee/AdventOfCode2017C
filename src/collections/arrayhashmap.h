@@ -1,7 +1,7 @@
 // An Array backed Hash Map for generic key and value types
 // Uses a simple backing array with linear probing for hash collisions
 
-#include "../common.h"
+#include "../lib.h"
 
 #ifndef ARRAY_HASH_MAP_H
 #define ARRAY_HASH_MAP_H

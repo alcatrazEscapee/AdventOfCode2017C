@@ -1,6 +1,6 @@
 // Vectors (the mathematical kind) of different dimensions
 
-#include "../common.h"
+#include "../lib.h"
 
 #ifndef VECTORS_H
 #define VECTORS_H

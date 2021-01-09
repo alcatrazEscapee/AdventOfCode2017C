@@ -1,6 +1,6 @@
 // Defines a generic ArrayList data structure
 
-#include "../common.h"
+#include "../lib.h"
 
 #ifndef ARRAY_LIST_H
 #define ARRAY_LIST_H

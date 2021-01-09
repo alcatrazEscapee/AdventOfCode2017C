@@ -10,7 +10,10 @@ String* read_file(char* file_name, uint32_t estimated_size)
     char c = '\0';
     while ((c = fgetc(file)) != EOF)
     {
-        str_append_char(s, c);
+        if (c != '\r')
+        {
+            str_append_char(s, c);
+        }
     }
 
     fclose(file);

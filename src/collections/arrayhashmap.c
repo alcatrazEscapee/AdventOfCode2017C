@@ -140,7 +140,7 @@ void* ahm_get(ArrayHashMap* map, void* key)
         {
             return map->values[index]; // Key match
         }
-        index = (index + 31) & mask;
+        index = (index + 1) & mask;
         current_key = map->keys[index];
     }
     return NULL; // No match

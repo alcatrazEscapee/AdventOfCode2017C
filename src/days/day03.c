@@ -38,13 +38,13 @@ int main(void)
     v2i_set(p, 0, 0);
     v2i_set(dp, 1, 0);
     max_steps = INPUT, walk_count = 0, step_max = 1, step_count = 0;
-    int32_t max_value = 0;
+    uint32_t part2 = 0;
 
     Vec2i* q = new(Vec2i, 0, 0);
-    ArrayHashMap* points = new(ArrayHashMap, 4, class(Vec2i), class(Int32));
+    ArrayHashMap* points = new(ArrayHashMap, 32, class(Vec2i), class(Int32));
     ahm_put(points, copy(Vec2i, p), new(Int32, 1));
 
-    for (uint32_t i = 2; max_value <= INPUT; i++)
+    for (uint32_t i = 2; part2 <= INPUT; i++)
     {
         p->x += dp->x;
         p->y += dp->y;
@@ -81,19 +81,17 @@ int main(void)
             }
         }
         ahm_put(points, copy(Vec2i, p), new(Int32, next_value));
-        max_value = next_value;
-
+        part2 = next_value;
     }
 
     // Cleanup
-    // The map has ownership of all entries, including key/value pointers, and is able to free all of them due to having a reference to the class struct
     del(ArrayHashMap, points);
     del(Vec2i, q);
     del(Vec2i, p);
     del(Vec2i, dp);
 
     ANSWER_UINT(3, 1, 475, part1);
-    ANSWER_INT(3, 2, 279138, max_value);
+    ANSWER_INT(3, 2, 279138, part2);
 
     return 0;
 }

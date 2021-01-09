@@ -3,17 +3,14 @@
 int main(void)
 {
     String* input = read_file("./inputs/day05.txt", 1000);
-    ArrayList* lines = str_split_whitespace(input);
-
-    del(String, input);
-
     IntArrayList* code = new(IntArrayList, 1000);
-    for iter(ArrayList, it, lines)
+    
+    for iter(StringSplit, it, input, "\n")
     {
         ial_append(code, str_parse_int32(it.value));
     }
 
-    del(ArrayList, lines);
+    del(String, input);
 
     IntArrayList* active_code = copy(IntArrayList, code);
 

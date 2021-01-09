@@ -20,7 +20,7 @@
 //
 // Including a #define VERBOSE_ON_PASS will output additional output on the result of every passed test, if desired
 
-#include "../src/common.h"
+#include "../src/lib.h"
 
 #ifndef UNITTEST_H
 #define UNITTEST_H

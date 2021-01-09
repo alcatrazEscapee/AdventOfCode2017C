@@ -60,6 +60,32 @@ TEST(test_strings_str_compare, {
     del(String, s3);
 });
 
+TEST(test_strings_iter, {
+    String* s = new(String, "abcd");
+    uint32_t i = 0;
+    char* exp = "abcd";
+    for iter(String, it, s)
+    {
+        ASSERT_EQUAL(it.value, exp[i], "iter() index %d is %c", i, it.value);
+        i++;
+    }
+
+    del(String, s);
+});
+
+TEST(test_strings_iter_split, {
+    String* s = new(String, "abc?acd!gdc");
+    uint32_t i = 0;
+    char* exp[] = {"abc", "acd", "gdc"};
+    for iter(StringSplit, it, s, "?!")
+    {
+        ASSERT_TRUE(str_equals_content(it.value, exp[i]), "iter() index %d is %s", i, it.value->slice);
+        i++;
+    }
+
+    del(String, s);
+});
+
 TEST(test_strings_str_append_char, {
     String* s1 = new(String, "test");
 
@@ -119,22 +145,6 @@ TEST(test_strings_str_equals_content, {
     del(String, s1);
 });
 
-TEST(test_strings_str_remove_all, {
-    String* s1 = new(String, "test some things");
-
-    str_remove_all(s1, "t");
-    ASSERT_TRUE(str_equals_content(s1, "es some hings"), "Expected 't' to be removed, got '%s'", s1->slice);
-
-    str_remove_all(s1, " es");
-    ASSERT_TRUE(str_equals_content(s1, "omhing"), "Expected 'tes ' to be removed, got '%s'", s1->slice);
-    
-    str_remove_all(s1, "omhing");
-    ASSERT_TRUE(str_equals_content(s1, ""), "Expected empty string, got '%s'", s1->slice);
-    ASSERT_EQUAL(s1->length, 0, "Expected zero length, got %d", s1->length);
-
-    del(String, s1);
-});
-
 TEST(test_strings_str_substring, {
     String* s1 = new(String, "the lazy cat");
 
@@ -176,11 +186,12 @@ TEST_GROUP(test_strings_main, {
     test_strings_new();
     test_strings_str_equals();
     test_strings_str_compare();
+    test_strings_iter();
+    test_strings_iter_split();
     test_strings_str_append_char();
     test_strings_str_append_slice();
     test_strings_str_append_string();
     test_strings_str_equals_content();
-    test_strings_str_remove_all();
     test_strings_str_substring();
     test_strings_str_sort();
 });

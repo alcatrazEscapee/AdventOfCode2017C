@@ -1,6 +1,6 @@
 // Common header file for all AoC puzzles
 
-#include "../common.h"
+#include "../lib.h"
 
 #ifndef AOC_H
 #define AOC_H

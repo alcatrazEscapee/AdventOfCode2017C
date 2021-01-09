@@ -2,7 +2,7 @@
 // Has O(1) contains checks (ahs_in)
 // Implemented using an ArrayHashMap with NULL values
 
-#include "../common.h"
+#include "../lib.h"
 #include "arrayhashmap.h"
 
 #ifndef ARRAY_HASH_SET_H

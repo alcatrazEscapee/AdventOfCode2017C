@@ -2,7 +2,7 @@
 // It allows a removal of annoying null-checking code (i.e. in ArrayHashSet), where class structs may be null
 // Instead, all methods on this class implementation are designed to handle a null value, and expect it.
 
-#include "common.h"
+#include "lib.h"
 
 #ifndef VOID_H
 #define VOID_H

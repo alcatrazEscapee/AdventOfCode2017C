@@ -3,20 +3,15 @@
 int main(void)
 {
     String* input = read_file("./inputs/day02.txt", 1000);
-    ArrayList* lines = str_split_lines(input);    
     IntArrayList* array = new(IntArrayList, 10);
+    int32_t part1 = 0, part2 = 0;
 
-    del(String, input);
-
-    int part1 = 0, part2 = 0;
-    for iter(ArrayList, line_it, lines)
+    for iter(StringSplit, line_it, input, "\n")
     {
-        ArrayList* values = str_split_whitespace(line_it.value);
-        for iter(ArrayList, it, values)
+        for iter(StringSplit, word_it, line_it.value, "\t")
         {
-            ial_append(array, str_parse_int32(it.value));
+            ial_append(array, str_parse_int32(word_it.value));
         }
-        del(ArrayList, values);
 
         // Part 1 - calculate the difference between max and min in each line
         int32_t min_value = INT_MAX, max_value = INT_MIN;
@@ -33,7 +28,7 @@ int main(void)
             for iter(IntArrayList, iy, array)
             {
                 int32_t a = ix.value, b = iy.value;
-                if (a != b && a > b && a % b == 0)
+                if (ix.index != iy.index && a > b && a % b == 0)
                 {
                     part2 += a / b;
                 }
@@ -43,7 +38,7 @@ int main(void)
         ial_clear(array);
     }
 
-    del(ArrayList, lines);
+    del(String, input);
     del(IntArrayList, array);
 
     ANSWER_INT(2, 1, 54426, part1);

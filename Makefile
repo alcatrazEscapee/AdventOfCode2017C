@@ -4,6 +4,7 @@
 DEBUG_DIR = out/debug/
 RELEASE_DIR = out/release/
 CC_DEBUG = gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
+CC_EXPAND = gcc -std=c11 -E -P
 CC_RELEASE = gcc -std=c11 -O3
 VALGRIND = valgrind --tool=memcheck --leak-check=full
 
@@ -25,7 +26,7 @@ INCLUDE = \
 	src/math/integer.h \
 	src/math/vectors.h \
 	src/days/aoc.h \
-	src/common.h \
+	src/lib.h \
 	src/sorting.h \
 	src/strings.h \
 	src/utils.h \
@@ -39,6 +40,7 @@ SRC = \
 	src/math/integer.c \
 	src/math/vectors.c \
 	src/days/aoc.c \
+	src/lib.c \
 	src/sorting.c \
 	src/strings.c \
 	src/utils.c \
@@ -70,6 +72,7 @@ help :
 	@echo "  make check day=XX  - Run day XX with Valgrind"
 	@echo "  make checkall      - Run all days with Valgrind"
 	@echo "  make checktest     - Run unit tests with Valgrind"
+	@echo "  make expand day=XX - Runs the preprocessor against day XX"
 
 .PHONY: run
 run: out/release/day$(day).o
@@ -113,12 +116,21 @@ checkall : $(DEBUG_DAYS)
 checktest : out/debug/test.o
 	-@$(VALGRIND) out/debug/test.o
 
+.PHONY: expand
+expand :
+	-@if [ "$(day)" = "" ]; then \
+		echo "No day provided - try with make expand day=XX " ; \
+	else \
+		mkdir -p out/debug ; \
+		$(CC_EXPAND) src/days/day$(day).c >> out/debug/day$(day).c ; \
+	fi
+
 out/debug/day%.o : src/days/day%.c $(SRC) $(INCLUDE)
 	mkdir -p out/debug
 	$(CC_DEBUG) $< $(SRC) -o $@
 
 out/debug/test.o : $(TEST_SRC) test/unittest.h $(SRC) $(INCLUDE)
-		mkdir -p out/debug
+	mkdir -p out/debug
 	$(CC_DEBUG) test/unittest.c $(SRC) -o out/debug/test.o
 
 out/release/day%.o : src/days/day%.c $(SRC) $(INCLUDE)

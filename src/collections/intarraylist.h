@@ -2,7 +2,7 @@
 // Implemented as a class and can be used as a Tuple<int32_t>
 // Automatically resizable - is initialized with exactly the original size
 
-#include "../common.h"
+#include "../lib.h"
 
 #ifndef INT_ARRAY_LIST_H
 #define INT_ARRAY_LIST_H

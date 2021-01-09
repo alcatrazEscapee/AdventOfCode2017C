@@ -3,7 +3,7 @@
 #define VERBOSE_ON_PASS
 
 #include "unittest.h"
-#include "../src/common.h"
+#include "../src/lib.h"
 
 #include "collections/testarrayhashmap.c"
 #include "collections/testarraylist.c"

@@ -1,6 +1,6 @@
 // Collections of generic (using function pointers and class objects) sorting algorithims
 
-#include "common.h"
+#include "lib.h"
 
 #ifndef SORTING_H
 #define SORTING_H

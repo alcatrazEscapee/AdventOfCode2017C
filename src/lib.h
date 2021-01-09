@@ -10,6 +10,7 @@
 // del(cls, instance) | del_c(cls_struct, instance)
 // - Takes ownership of a instance of the class 'cls' and destroys it.
 // - This IS part of the class struct, and MUST be defined.
+// - Automatically null checks the input value. A NULL value indicates this pointer has been moved / ownership taken
 // 
 // copy(cls, instance) | copy_c(cls_struct, instance)
 // - Creates a copy of the class name 'cls'. Borrows the existing instance 'instance'
@@ -41,7 +42,7 @@
 // - foo(cls, args...) == foo_c(class(cls), args...)
 // - This WILL ONLY be defined if cls has a defined class struct.
 //
-// format(args...) | format_c(cls_struct, instance)
+// format(cls, args...) | format_c(cls_struct, instance)
 // - Automatically null checks the instance argument
 // - This formats a class or other instance to a String
 // - Ownership of the String is transfered to the caller
@@ -63,6 +64,7 @@
 #include <stdarg.h> // Varargs
 #include <limits.h> // INT_MIN, INT_MAX
 #include <time.h> // time
+#include <ctype.h> // isdigit 
 
 // Common Structs
 // Dependencies: None
@@ -104,7 +106,7 @@ typedef struct String__struct* (*FnFormat) (void*);
 // Macros for calling class methods through nicer syntax
 
 #define new(cls, args...) cls ## __new(args)
-#define del(cls, instance) cls ## __del(instance)
+#define del(cls, instance) ((void) ((instance) == NULL ? ((void)0) : ((cls ## __del(instance)), (void)0)))
 #define copy(cls, instance) cls ## __copy(instance)
 #define equals(cls, left, right) ((left) == NULL || (right) == NULL ? (left) == (right) : cls ## __equals(left, right))
 #define compare(cls, left, right) cls ## __compare(left, right)
@@ -148,12 +150,49 @@ typedef struct String__struct* (*FnFormat) (void*);
 // Rust style loop statements
 #define loop while (true)
 
+// Collection methods for iterators
+// Inputs are an iter() statement, a new collection, and a statement which accumulates elements of the iterator into the collection
+// Usage:
+// ArrayList* list = collect(iter(...), new(...), ...)
+#define collect(iter_statement, collection, collector_statement) collection; { for iter_statement { collector_statement; }}
+
+
+// Move / Ownership Semantics
+//
+// Most functions have specific contracts about how they manage ownership of pointers
+// There are a few notions, simplified from C++ / C practices, and Rust:
+//
+// 1. Borrowing:
+// - A pointer is passed by value (T* t) to a function.
+// - The function MUST NOT call del(T, t) during it's execution, and at the return of the function, the pointer must still be valid
+//
+// 2. Moving:
+// - A pointer is passed by reference (T** t) to a function.
+// - The pointer may be destroyed at the end of this function. (e.g. the function called either del(T, *t) or v = move(T, *t))
+// - This is heavilly context dependent. It may apply, e.g. to iterator methods.
+// - In the body of an iterator, the main code MAY take ownership of the internal value by calling move(T, &t). This value will then by NULL'd (and the required call to del(T, t) will noop)
+//
+// 3. Destroying
+// - A pointer is passed by value (T* t) to a function
+// - The function takes ownership of the pointer, and it IS NOT valid to use it after passing it, or call del(T, t).
+// - Examples include del(T, t), which takes ownership of 't'
+//
+// You can only call move() when given a MUTABLE BORROW (which must be unique)
+// Then, the original value is nullified, there are no other references, and you now have ownership of the reference
+// Thus, a BORROW cannot be upgraded into ownership, but a MUTABLE BORROW can be.
+// For example, an iterator through an ArrayList<String> gives a IMMUTABLE BORROW. There are two references (the list, owner, and the iterator, borrowing) to the value
+// Another example, the StringLines iterator owns each string instance, and the loop code is given a MUTABLE BORROW. It can take ownership through calling move()
+
+#define move(ptr) (__move((void**)(& (ptr))))
+void* __move(void** ref_ptr);
+
+
 // Iterators
 //
 // An iterator over a collection of elements of type T is a struct of at least the following:
 // typedef struct {
 //     T value;  
-// } Iterator(T)
+// } Iterator<T>
 //
 // It can be used in place of the condition on a for loop:
 // for iter(Class, it, other args...) {
@@ -162,24 +201,19 @@ typedef struct String__struct* (*FnFormat) (void*);
 //
 // The iterator struct itself is stack allocated and does not need to be cleaned up.
 // In order to define an iterator of type T, the following methods (or macro equivilants) are required:
-// Iterator(T) T__iterator__start(args...)
-// bool T__iterator__test(Iterator(T)* it, args...)
-// void T__iterator__next(Iterator(T)* it, args...)
+// Iterator<T> T__iterator__start(args...)
+// bool T__iterator__test(Iterator<T>* it, args...)
+// void T__iterator__next(Iterator<T>* it, args...)
 //
 // Additionally, for generic collections, the following variant can be used:
 // for type_iter(Class, Type, other args...) {
-//     it.parent = an Iterator(Class)
+//     it.parent = an Iterator<Class>
 //     it.value = the same as it.parent.value, but as Type
 // }
 // This allows iteration over generic data structures without first casting or storing the value (often a void*) down to the desired type.
 // For instance, iterating over an ArrayList<String> with iter() would require ((String*) it.value)->length, but with type_iter(), it can be referenced as it.value->length
 
 #define Iterator(cls) cls ## __iterator
-
-// Since del(Iterator(Class), ...) will not work due to macro restrictions.
-// This sometimes has to be called from user code, e.g. if you break early from an iterator loop
-#define del_iter(cls, it) cls ## __iterator__del(it)
-
 
 #define iter(cls, it, args...) ( \
     Iterator(cls) it = cls ## __iterator__start(args); \

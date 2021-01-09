@@ -1,7 +1,7 @@
 // A heap allocated String data type with utility methods, similar to Rust's String vs. &'static str
 // Unlike Rust's string natively handling unicode data, we make the (simplifying) assumptions that a character represents a single byte of 7-bit ASCII data.
 
-#include "common.h"
+#include "lib.h"
 #include "collections/arraylist.h"
 
 #ifndef STRINGS_H
@@ -12,6 +12,7 @@ String* String__new(char* initial_value);
 DERIVE_CLASS_HEADER(String, String*);
 
 // Iterator
+// This iterator is the default iter(String) iterator, and will evaluate for each character in the string
 typedef struct
 {
     uint32_t index;
@@ -19,8 +20,28 @@ typedef struct
 } Iterator(String);
 
 #define String__iterator__start(string) { 0, '\0' }
-#define String__iterator__test(it, string) (it)->index < (string)->length ? ((it)->value = (string)->slice[(it)->index], true) : false
+#define String__iterator__test(it, string) (it)->index < (string)->length ? (((it)->value = (string)->slice[(it)->index]), true) : false
 #define String__iterator__next(it, string) (it)->index++
+
+// StringSplit iterators
+// Splits a string into substrings according to delimiter characters
+// The delimiters must be a static string as it's inlined directly into method calls
+// Usage:
+// for iter(StringSplit, it, string, "\n\r") {
+//     it.value, a String* which is mutably borrowed   
+// }
+
+typedef struct
+{
+    String* value;
+    uint32_t index;
+} Iterator(StringSplit);
+
+#define StringSplit__iterator__start(string, delim) { NULL, 0 }
+#define StringSplit__iterator__next(it, string, delim) (void)0
+
+bool StringSplit__iterator__test(Iterator(StringSplit)* it, String* string, char* delim);
+
 
 #define NULL_STRING (new(String, "<NULL>"))
 #define EMPTY_STRING (new(String, ""))
@@ -50,27 +71,18 @@ void str_pop(String* string, uint32_t amount);
 
 bool str_in(String* string, uint32_t index);
 char str_get_char(String* string, uint32_t index);
-void str_set_char(String* string, uint32_t index, char c);
-void str_swap_char(String* string, uint32_t left, uint32_t right);
+void str_set_char(String* string, uint32_t index, char c); // Sets the char at a given index
 
 bool str_equals_content(String* string, char* static_string);
 
 // String Manipulations
 
-// Removes all occurances of any of the characters in 'chars' in the string.
-void str_remove_whitespace(String* string);
-void str_remove_all(String* string, char* chars);
-
-// Splits the string into substrings deliminated by (and removing) any of the characters in chars.
-ArrayList* str_split_lines(String* string);
-ArrayList* str_split_whitespace(String* string);
-ArrayList* str_split_all(String* string, char* chars);
-
 // Returns a new string which is a substring of this string
 String* str_substring(String* string, uint32_t start_inclusive, uint32_t end_exclusive);
 
 // Parsing
-int32_t str_parse_int32(String* string); // Destructive
+int32_t str_parse_int32(String* string);
+String* str_escape(String* string); // Converts a string to escaped form (e.g. '\t\r\n' -> '\\t\\r\\n')
 
 // Sorting
 void str_sort(String* string);
@@ -79,7 +91,7 @@ void str_sort(String* string);
 
 void str_ensure_length(String** string, uint32_t required_length); // Ensures a specific length of string will fit in this string, resizes otherwise
 
-bool str_char_in_chars(char* chars, uint32_t length, char c); // Checks if a char is contained in a list of chars
+bool str_char_in_chars(char* chars, char c); // Checks if a char is contained in a list of chars
 
 bool str_qsort_lt_fn(String* string, uint32_t left, uint32_t right);
 void str_qsort_swap_fn(String* string, uint32_t left, uint32_t right);

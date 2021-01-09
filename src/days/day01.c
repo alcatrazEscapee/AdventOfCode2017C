@@ -7,10 +7,12 @@ int main(void)
     String* input = read_file("./inputs/day01.txt", INPUT_LENGTH);
     IntArrayList* array = new(IntArrayList, INPUT_LENGTH);
     
-    str_remove_whitespace(input);
     for iter(String, it, input)
     {
-        ial_append(array, it.value - '0');
+        if (isdigit(it.value))
+        {
+            ial_append(array, it.value - '0');
+        }
     }
 
     del(String, input);

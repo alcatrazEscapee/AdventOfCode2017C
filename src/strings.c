@@ -171,6 +171,44 @@ String* String__format(String* instance) // Format
     return copy(String, instance);
 }
 
+bool StringSplit__iterator__test(Iterator(StringSplit)* it, String* string, char* delim)
+{
+    del(String, it->value);
+    if (it->index < string->length)
+    {
+        for (uint32_t next = it->index; next < string->length; next++)
+        {
+            char c = string->slice[next];
+            if (str_char_in_chars(delim, c))
+            {
+                // Found the endpoint of the current slice
+                if (next == it->index)
+                {
+                    // Empty string
+                    it->value = EMPTY_STRING;
+                    it->index++;
+                }
+                else
+                {
+                    // Non-empty string
+                    it->value = str_substring(string, it->index, next);
+                    it->index = next + 1;
+                }
+                return true;
+            }
+        }
+        if (it->index < string->length)
+        {
+            // Last substring
+            it->value = str_substring(string, it->index, string->length);
+            it->index = string->length;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 // Instance Methods
 
 void str_append_char(String* string, char c)
@@ -244,65 +282,6 @@ bool str_equals_content(String* string, char* static_string)
 
 // String Manipulations
 
-void str_remove_whitespace(String* string)
-{
-    return str_remove_all(string, "\r\n\t ");
-}
-
-void str_remove_all(String* string, char* chars)
-{
-    uint32_t chars_length = str_slice_len(chars);
-    uint32_t removed = 0;
-    for (uint32_t pointer = 0; pointer < string->length; pointer++)
-    {
-        if (str_char_in_chars(chars, chars_length, string->slice[pointer]))
-        {
-            removed++;
-        }
-        else
-        {
-            string->slice[pointer - removed] = string->slice[pointer];
-        }
-    }
-    string->length -= removed;
-}
-
-ArrayList* str_split_lines(String* string)
-{
-    return str_split_all(string, "\r\n");
-}
-
-ArrayList* str_split_whitespace(String* string)
-{
-    return str_split_all(string, "\r\n\t ");
-}
-
-// Splits the string into substrings deliminated by (and removing) any of the characters in chars.
-ArrayList* str_split_all(String* string, char* chars)
-{
-    ArrayList* list = new(ArrayList, 10, class(String));
-    uint32_t chars_length = str_slice_len(chars);
-    uint32_t last = 0;
-    for (uint32_t pointer = 0; pointer < string->length; pointer++)
-    {
-        if (str_char_in_chars(chars, chars_length, string->slice[pointer]))
-        {
-            // Create and add a new substring, if the previous length is nonzero
-            if (pointer > last)
-            {
-                al_append(list, str_substring(string, last, pointer));
-            }
-            last = pointer + 1;
-        }
-    }
-    // Include the last substring
-    if (string->length > last)
-    {
-        al_append(list, str_substring(string, last, string->length));
-    }
-    return list;
-}
-
 // Returns a new string which is a substring of this string
 String* str_substring(String* string, uint32_t start_inclusive, uint32_t end_exclusive)
 {
@@ -330,6 +309,30 @@ int32_t str_parse_int32(String* string)
     int32_t e = 0;
     sscanf(string->slice, "%d", &e);
     return e;
+}
+
+String* str_escape(String* string)
+{
+    String* escaped_string = str_create_with_length(string->length);
+    for iter(String, it, string)
+    {
+        switch (it.value)
+        {
+            case '\n':
+                str_append_slice(escaped_string, "\\n");
+                break;
+            case '\t':
+                str_append_slice(escaped_string, "\\t");
+                break;
+            case '\r':
+                str_append_slice(escaped_string, "\\r");
+                break;
+            default:
+                str_append_char(escaped_string, it.value);
+                break;
+        }
+    }
+    return escaped_string;
 }
 
 // Sorting
@@ -368,9 +371,9 @@ void str_ensure_length(String** string, uint32_t required_length)
     }
 }
 
-bool str_char_in_chars(char* chars, uint32_t length, char c)
+bool str_char_in_chars(char* chars, char c)
 {
-    for (uint32_t i = 0; i < length; i++)
+    for (uint32_t i = 0; chars[i] != '\0'; i++)
     {
         if (c == chars[i])
         {

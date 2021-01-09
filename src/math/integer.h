@@ -2,7 +2,7 @@
 // Types: int32_t*, int64_t*
 // Represents a boxed (heap allocated) integer
 
-#include "../common.h"
+#include "../lib.h"
 
 #ifndef INTEGER_H
 #define INTEGER_H

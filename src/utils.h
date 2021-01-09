@@ -1,6 +1,6 @@
 // Simple math util functions used by collections and other boilerplate code
 
-#include "common.h"
+#include "lib.h"
 
 #ifndef UTILS_H
 #define UTILS_H
