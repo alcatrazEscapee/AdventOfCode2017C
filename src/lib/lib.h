@@ -1,6 +1,94 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+// Generic Macro Wizardry
+
+// Contatenations that work w.r.t. other macro expansion
+// #define A() X
+// A() ## Y will produce A()Y
+// CONCAT(A(), Y) will produce XY
+#define CONCAT(a, ...) CONCAT_(a, __VA_ARGS__)
+#define CONCAT_(a, ...) a ## __VA_ARGS__
+
+// Concats all individual arguments rather than taking the second to be varadic
+// CONCAT(a, b, c) will produce "ab, c"
+// CONCAT3(a, b, c) will produce "abc"
+#define CONCAT3(a, b, ...) CONCAT(CONCAT(a, b), __VA_ARGS__)
+#define CONCAT4(a, b, ...) CONCAT3(CONCAT(a, b), __VA_ARGS__)
+#define CONCAT5(a, b, ...) CONCAT4(CONCAT(a, b), __VA_ARGS__)
+#define CONCAT6(a, b, ...) CONCAT5(CONCAT(a, b), __VA_ARGS__)
+#define CONCAT7(a, b, ...) CONCAT6(CONCAT(a, b), __VA_ARGS__)
+#define CONCAT8(a, b, ...) CONCAT7(CONCAT(a, b), __VA_ARGS__)
+
+// Stringification of macro values that works w.r.t other macro expansion
+// These also work outside of existing macros, i.e. in template files
+#define LITERAL(args...) LITERAL_(args)
+#define LITERAL_(args...) #args
+
+// Joins multiple discrete arguments into a single varadic args call
+#define JOIN(args...) args
+
+// Conditional Switching. Accepts IIF ( condition ) (value_if_false, value_if_true ), where condition resolves to 0 or 1
+#define IIF(c) CONCAT(IIF_, c)
+#define IIF_0(t, ...) __VA_ARGS__
+#define IIF_1(t, ...) t
+
+// Conditional Statements
+#define CHECK(...) CHECK_N(__VA_ARGS__, 0)
+#define CHECK_N(x, n, ...) n
+
+#define PROBE(x) x, 1
+
+// Reflective Macro Invocation
+// #define ARGS 1, 2, 3
+// #define SUM(a, b, c) a + b + c
+// SUM(ARGS) will produce an error due to too few parameters
+// REFLECT(SUM, ARGS) will produce 1 + 2 + 3
+#define REFLECT(m, ...) REFLECT_EXPAND(m REFLECT_WRAP(__VA_ARGS__))
+#define REFLECT_EXPAND(x) x
+#define REFLECT_WRAP(...) (__VA_ARGS__)
+
+// Extracting arguments from a list
+// Arguments are 1-indexed
+#define ARG_1(x, ...)  x
+#define ARG_2(x, ...)  ARG_1(__VA_ARGS__)
+#define ARG_3(x, ...)  ARG_2(__VA_ARGS__)
+#define ARG_4(x, ...)  ARG_3(__VA_ARGS__)
+#define ARG_5(x, ...)  ARG_4(__VA_ARGS__)
+#define ARG_6(x, ...)  ARG_5(__VA_ARGS__)
+#define ARG_7(x, ...)  ARG_6(__VA_ARGS__)
+#define ARG_8(x, ...)  ARG_7(__VA_ARGS__)
+#define ARG_9(x, ...)  ARG_8(__VA_ARGS__)
+#define ARG_10(x, ...) ARG_9(__VA_ARGS__)
+#define ARG_11(x, ...) ARG_10(__VA_ARGS__)
+#define ARG_12(x, ...) ARG_11(__VA_ARGS__)
+#define ARG_13(x, ...) ARG_12(__VA_ARGS__)
+#define ARG_14(x, ...) ARG_13(__VA_ARGS__)
+#define ARG_15(x, ...) ARG_14(__VA_ARGS__)
+#define ARG_16(x, ...) ARG_15(__VA_ARGS__)
+
+// If arg == 1, output value, else nothing.
+#define IIF_EMPTY(arg, value) IIF ( arg ) (value,)
+
+// Generates a list of nargs elements
+// Usage: IIF_LIST(K) (arg1, arg2, arg3... argN) will return arg1, arg2... argK for K <= N
+#define IIF_LIST(nargs) CONCAT(IIF_LIST_, nargs)
+#define IIF_LIST_1(arg1, ...) arg1
+#define IIF_LIST_2(arg1, arg2, ...) arg1, arg2
+#define IIF_LIST_3(arg1, arg2, arg3, ...) arg1, arg2, arg3
+#define IIF_LIST_4(arg1, arg2, arg3, arg4, ...) arg1, arg2, arg3, arg4
+
+// Checks for NIL
+// NIL is used as a placeholder argument for cases where arguments need to be extended by tokens that are expandable (i.e., not ~)
+#define IS_NIL(nil) CHECK(NIL_PROBE(nil))
+
+#define NIL_PROBE(nil)          NIL_PROBE_PROXY( CONCAT(nil, _QUERY) ) // wrap
+#define NIL_PROBE_PROXY(...)    NIL_PROBE_MERGE(__VA_ARGS__) // expand arguments
+#define NIL_PROBE_MERGE(x)      NIL_PROBE_COMBINE_ x // merge
+#define NIL_PROBE_COMBINE_(...) PROBE(~) // if merge successful, expand to probe
+
+#define NIL_QUERY ()
+
 // Standard Library Headers
 
 #include <stdio.h> // printf, etc.
@@ -34,6 +122,16 @@ typedef _Bool bool;
 typedef char* slice_t;
 typedef void* pointer_t;
 
+// Primitive Type Classes:
+// Character, Boolean, Int32, Int64, UInt32, UInt64
+
+typedef char*     Character;
+typedef bool*     Boolean;
+typedef int32_t*  Int32;
+typedef int64_t*  Int64;
+typedef uint32_t* UInt32;
+typedef uint64_t* UInt64;
+
 // Primitive Type Handling
 
 // A macro that is defined for all primitive and class types
@@ -45,10 +143,10 @@ typedef void* pointer_t;
 
 #define IS_PRIMITIVE_TYPE(cls) CHECK(PRIMITIVE_TYPE_PROBE(cls))
 
-#define PRIMITIVE_TYPE_PROBE(cls)          PRIMITIVE_TYPE_PROBE_PROXY( CONCAT(cls, __PRIMITIVE_TYPE) ) // concatenate prefix with user name
-#define PRIMITIVE_TYPE_PROBE_PROXY(...)    PRIMITIVE_TYPE_PROBE_MERGE(__VA_ARGS__)               // expand arguments
-#define PRIMITIVE_TYPE_PROBE_MERGE(x)      PRIMITIVE_TYPE_PROBE_COMBINE_ x                       // merge
-#define PRIMITIVE_TYPE_PROBE_COMBINE_(...) PROBE(~)                                              // if merge successful, expand to probe
+#define PRIMITIVE_TYPE_PROBE(cls)          PRIMITIVE_TYPE_PROBE_PROXY( CONCAT(cls, __PRIMITIVE_TYPE) ) // concatenate prefix
+#define PRIMITIVE_TYPE_PROBE_PROXY(...)    PRIMITIVE_TYPE_PROBE_MERGE(__VA_ARGS__) // expand arguments
+#define PRIMITIVE_TYPE_PROBE_MERGE(x)      PRIMITIVE_TYPE_PROBE_COMBINE_ x // merge
+#define PRIMITIVE_TYPE_PROBE_COMBINE_(...) PROBE(~) // if merge successful, expand to probe
 
 #define char__PRIMITIVE_TYPE ()
 #define bool__PRIMITIVE_TYPE ()
@@ -56,48 +154,6 @@ typedef void* pointer_t;
 #define int64_t__PRIMITIVE_TYPE ()
 #define uint32_t__PRIMITIVE_TYPE ()
 #define uint64_t__PRIMITIVE_TYPE ()
-
-// Macro Wizardry
-// Allows us to do checks against specific macro values (i.e. for primitives)
-
-// Contatenations that work w.r.t. brackets
-#define CONCAT(a, ...) CONCAT_(a, __VA_ARGS__)
-#define CONCAT_(a, ...) a ## __VA_ARGS__
-
-// Concats all individual arguments rather than taking the second to be varadic
-// CONCAT(a, b, c) will produce "ab, c"
-// CONCAT3(a, b, c) will produce "abc"
-#define CONCAT3(x0, x1, x2) CONCAT(x0, CONCAT(x1, x2))
-#define CONCAT4(x0, x1, x2, x3) CONCAT3(x0, x1, CONCAT(x2, x3))
-#define CONCAT5(x0, x1, x2, x3, x4) CONCAT4(x0, x1, x2, CONCAT(x3, x4))
-#define CONCAT6(x0, x1, x2, x3, x4, x5) CONCAT5(x0, x1, x2, x3, CONCAT(x4, x5))
-
-// Stringification of macro values
-#define JOIN(args...) args
-#define LITERAL(args...) LITERAL_(args)
-#define LITERAL_(args...) #args
- 
-// Conditional Switching
-#define IIF(c) CONCAT(IIF_, c)
-#define IIF_0(t, ...) __VA_ARGS__
-#define IIF_1(t, ...) t
-
-// Conditional Statements
-#define CHECK(...) CHECK_N(__VA_ARGS__, 0)
-#define CHECK_N(x, n, ...) n
-
-#define PROBE(x) x, 1 
-
-
-// Primitive Type Classes:
-// Character, Boolean, Int32, Int64, UInt32, UInt64
-
-typedef char*     Character;
-typedef bool*     Boolean;
-typedef int32_t*  Int32;
-typedef int64_t*  Int64;
-typedef uint32_t* UInt32;
-typedef uint64_t* UInt64;
 
 // Structs and Type Definitions for Library Classes
 
@@ -311,113 +367,35 @@ declare_class(Void);
 
 // Tuples!
 // Tuples are simple auto-classes that can contain up to four primitive or class types.
+// They are declared using templates, by the definition of a single Tuple macro:
+//
+// #define Tuple cls, type1, value1, type2, value2, ... typeN, valueN
+// #include "collections/tuple.template.c"
+//
+// In order to reference individual parts of the 'Tuple' definition, it is reflected into various ARG_N macro invocations via the REFLECT macro
+// These are then directly used in the template file
 
-// Both are required to create and use a tuple - the declaration can be put in a header file, the impl should not.
-#define declare_tuple(cls, args...) TUPLE_UNROLL(TUPLE_HEADER, cls, args)
-#define impl_tuple(cls, args...) TUPLE_UNROLL(TUPLE_IMPL, cls, args)
+#define TUPLE_ARGS Tuple, NIL, NIL, NIL, NIL, NIL, NIL
 
-// Unrolls the arguments to the tuple and selects the right TUPLE_# executor based on how many arguments were provided
-#define TUPLE_UNROLL(exec, cls, args...) TUPLE_UNROLL_SELECT(args, TUPLE_4, ~, TUPLE_3, ~, TUPLE_2, ~, TUPLE_1) (exec, cls, args)
-#define TUPLE_UNROLL_SELECT(t1, v1, t2, v2, t3, v3, t4, v4, x, ...) x
+// Basic arguments - can determine from the extended TUPLE_ARGS and argument position
+#define TUPLE_CLASS  REFLECT(ARG_1, TUPLE_ARGS)
+#define TUPLE_TYPE1  REFLECT(ARG_2, TUPLE_ARGS)
+#define TUPLE_VALUE1 REFLECT(ARG_3, TUPLE_ARGS)
+#define TUPLE_TYPE2  REFLECT(ARG_4, TUPLE_ARGS)
+#define TUPLE_VALUE2 REFLECT(ARG_5, TUPLE_ARGS)
+#define TUPLE_TYPE3  REFLECT(ARG_6, TUPLE_ARGS)
+#define TUPLE_VALUE3 REFLECT(ARG_7, TUPLE_ARGS)
+#define TUPLE_TYPE4  REFLECT(ARG_8, TUPLE_ARGS)
+#define TUPLE_VALUE4 REFLECT(ARG_9, TUPLE_ARGS)
 
-// Expands the given arguments to the tuple function (either TUPLE_HEADER or TUPLE_IMPL)
-// Arguments are ALL type value pairs, followed by the total number of arguments (nargs), and then a boolean (1 or 0) for each optional argument
-// The 'x's are placeholders - they must be valid tokens, even though they are discarded
-#define TUPLE_1(exec, cls, type1, value1) exec(cls, type1, value1, x, x, x, x, x, x, 1, 0, 0, 0)
-#define TUPLE_2(exec, cls, type1, value1, type2, value2) exec(cls, type1, value1, type2, value2, x, x, x, x, 2, 1, 0, 0)
-#define TUPLE_3(exec, cls, type1, value1, type2, value2, type3, value3) exec(cls, type1, value1, type2, value2, type3, value3, x, x, 3, 1, 1, 0)
-#define TUPLE_4(exec, cls, type1, value1, type2, value2, type3, value3, type4, value4) exec(cls, type1, value1, type2, value2, type3, value3, type4, value4, 4, 1, 1, 1)
+// Based on the presence of NIL, compute each of arg2, arg3, arg4
+#define TUPLE_ARG2 IIF( IS_NIL(TUPLE_TYPE2) )(0, 1)
+#define TUPLE_ARG3 IIF( IS_NIL(TUPLE_TYPE3) )(0, 1)
+#define TUPLE_ARG4 IIF( IS_NIL(TUPLE_TYPE4) )(0, 1)
 
-// If arg == 1, output value, else nothing. Used for no-op statements in tuple boilerplate code.
-#define IIF_EMPTY(arg, value) IIF ( arg ) (value,)
-
-// Generates a list of nargs elements
-// Usage: IIF_LIST(nargs) (K, arg2, arg3... argN) will return arg1, arg2... argK for K <= N
-#define IIF_LIST(nargs) IIF_LIST_ ## nargs
-#define IIF_LIST_1(arg1, ...) arg1
-#define IIF_LIST_2(arg1, arg2, ...) arg1, arg2
-#define IIF_LIST_3(arg1, arg2, arg3, ...) arg1, arg2, arg3
-#define IIF_LIST_4(arg1, arg2, arg3, arg4, ...) arg1, arg2, arg3, arg4
-
-// Tuple header
-// Defines a struct containing each type-value pair, and the required header to declare it as a class
-#define TUPLE_HEADER(cls, type1, value1, type2, value2, type3, value3, type4, value4, nargs, arg2, arg3, arg4) \
-struct cls ## __struct \
-{ \
-    type1 value1; \
-    IIF_EMPTY(arg2, type2 value2;) \
-    IIF_EMPTY(arg3, type3 value3;) \
-    IIF_EMPTY(arg4, type4 value4;) \
-}; \
-\
-typedef cls ## __struct * cls; \
-\
-declare_class(cls); \
-declare_constructor(cls, IIF_LIST(nargs)(type1 value1, type2 value2, type3 value3, type4 value4)) \
-
-// Tuple implementation
-// Implements the class struct, and defines standard tuple behavior for all class methods.
-#define TUPLE_IMPL(cls, type1, value1, type2, value2, type3, value3, type4, value4, nargs, arg2, arg3, arg4) \
-impl_class(cls); \
-\
-cls cls ## __new( IIF_LIST(nargs)(type1 value1, type2 value2, type3 value3, type4 value4) ) \
-{ \
-    cls tuple = class_malloc(cls); \
-    tuple->value1 = value1; \
-    IIF_EMPTY(arg2, tuple->value2 = value2;) \
-    IIF_EMPTY(arg3, tuple->value3 = value3;) \
-    IIF_EMPTY(arg4, tuple->value4 = value4;) \
-    return tuple; \
-} \
-void cls ## __del(cls tuple) \
-{ \
-    del(type1, tuple->value1); \
-    IIF_EMPTY(arg2, del(type2, tuple->value2);) \
-    IIF_EMPTY(arg3, del(type3, tuple->value3);) \
-    IIF_EMPTY(arg4, del(type4, tuple->value4);) \
-    free(tuple); \
-} \
-void cls ## __copy(cls tuple) \
-{ \
-    return new(cls,  IIF_LIST(nargs)(copy(type1, tuple->value1), copy(type2, tuple->value2), copy(type3, tuple->value3), copy(type4, tuple->value4)) ); \
-} \
-bool cls ## __equals(cls left, cls right) \
-{ \
-    return equals(type1, left->value1, right->value1) \
-        IIF_EMPTY(arg2, && equals(type2, left->value2, right->value2)) \
-        IIF_EMPTY(arg3, && equals(type3, left->value3, right->value3)) \
-        IIF_EMPTY(arg4, && equals(type4, left->value4, right->value4)) \
-    ; \
-} \
-int32_t cls ## __compare(cls left, cls right) \
-{ \
-    int32_t result = compare(type1, left->value1, right->value1);\
-    if (result != 0) return result; \
-    IIF_EMPTY(arg2, result = compare(type2, left->value2, right->value2); if (result != 0) return result;) \
-    IIF_EMPTY(arg3, result = compare(type3, left->value3, right->value3); if (result != 0) return result;) \
-    IIF_EMPTY(arg4, result = compare(type4, left->value4, right->value4); if (result != 0) return result;) \
-    return result; \
-} \
-uint32_t cls ## __hash(cls tuple) \
-{ \
-    uint32_t h = hash(type1, tuple->value1); \
-    IIF_EMPTY(arg2, h ^= hash(type2, tuple->value2);) \
-    IIF_EMPTY(arg3, h ^= hash(type3, tuple->value3);) \
-    IIF_EMPTY(arg4, h ^= hash(type4, tuple->value4);) \
-    return h; \
-} \
-String cls ## __format(cls tuple) \
-{ \
-    String string = new(String, #cls "("); \
-    str_append_string(string, format(type1, tuple->value1)); \\
-    str_append_slice(string, ", "); \
-    IIF_EMPTY(arg2, str_append_string(string, format(type2, tuple->value2)); str_append_slice(string, ", ");) \
-    IIF_EMPTY(arg3, str_append_string(string, format(type3, tuple->value3)); str_append_slice(string, ", ");) \
-    IIF_EMPTY(arg4, str_append_string(string, format(type4, tuple->value4)); str_append_slice(string, ", ");) \
-    str_pop(string, 2); \
-    str_append_char(string, ')'); \
-    return string; \
-}
+// Compute nargs from a reverse expansion of the tuple arguments
+#define TUPLE_NARGS_INPUT Tuple, 4, ~, 3, ~, 2, ~, 1
+#define TUPLE_NARGS REFLECT(ARG_10, TUPLE_NARGS_INPUT)
 
 
 // Panics

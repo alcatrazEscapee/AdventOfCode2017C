@@ -87,7 +87,7 @@ $(RELEASE_DIR)/day%.o : src/main/day%.c $(LIB_SRC) $(LIB_INCLUDE)
 	mkdir -p $(RELEASE_DIR)
 	$(GCC_RELEASE) $< $(LIB_SRC) -o $@
 
-$(RELEASE_DIR)/test.o : $(TEST_SRC) $(LIB_SRC) $(TEST_INCLUDE) $(INCLUDE)
+$(RELEASE_DIR)/test.o : $(TEST_SRC) $(LIB_SRC) $(TEST_INCLUDE) $(LIB_INCLUDE)
 	mkdir -p $(RELEASE_DIR)
 	$(GCC_DEBUG) $(TEST_SRC) $(LIB_SRC) -o $(RELEASE_DIR)/test.o
 
@@ -96,6 +96,6 @@ $(DEBUG_DIR)/day%.o : src/main/day%.c $(LIB_SRC) $(LIB_INCLUDE)
 	mkdir -p $(DEBUG_DIR)
 	$(GCC_DEBUG) $< $(LIB_SRC) -o $@
 
-$(DEBUG_DIR)/test.o : $(TEST_SRC) $(LIB_SRC) $(TEST_INCLUDE) $(INCLUDE)
+$(DEBUG_DIR)/test.o : $(TEST_SRC) $(LIB_SRC) $(TEST_INCLUDE) $(LIB_INCLUDE)
 	mkdir -p $(DEBUG_DIR)
 	$(GCC_DEBUG) $(TEST_SRC) $(LIB_SRC) -o $(DEBUG_DIR)/test.o

@@ -22,9 +22,9 @@ String Set__format(Set set);
 
 // Iterator
 
-#define Set__iterator__start(map) Map__iterator__start(map)
-#define Set__iterator__test(it, map) Map__iterator__test(it, map)
-#define Set__iterator__next(it, map) Map__iterator__next(it, map)
+#define Set__iterator__start(set) Map__iterator__start(set)
+#define Set__iterator__test(it, set) Map__iterator__test(it, set)
+#define Set__iterator__next(it, set) Map__iterator__next(it, set)
 
 
 // Public Instance Methods - these all borrow the map
