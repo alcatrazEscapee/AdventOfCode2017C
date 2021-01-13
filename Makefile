@@ -1,62 +1,31 @@
 # Advent Of Code 2017 In C Makefile
-# Usage: make all|help|day=XX
+# Usage: make help
 
-DEBUG_DIR = out/debug/
-RELEASE_DIR = out/release/
-CC_DEBUG = gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
-CC_EXPAND = gcc -std=c11 -E -P
-CC_RELEASE = gcc -std=c11 -O3
-VALGRIND = valgrind --tool=memcheck --leak-check=full
+# Directory structure
+DEBUG_DIR    := out/debug
+RELEASE_DIR  := out/release
+SRC_DIR      := src/main
+LIB_DIR      := src/lib
+TEST_DIR     := src/test
 
-DAYS = \
-		day01.o \
-		day02.o \
-		day03.o \
-		day04.o \
-		day05.o
+# Compile commands
+GCC_DEBUG    := gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
+GCC_EXPAND   := gcc -std=c11 -E -P
+GCC_RELEASE  := gcc -std=c11 -O3
+VALGRIND     := valgrind --tool=memcheck --leak-check=full
 
-DEBUG_DAYS = $(addprefix $(DEBUG_DIR), $(DAYS))
-RELEASE_DAYS = $(addprefix $(RELEASE_DIR), $(DAYS))
+# Source files
+# SRC are compiled sources
+# INCLUDE are files that are not compiled directly, but still need to be tracked for changes
+DAYS_SRC     := $(shell find $(SRC_DIR) -name 'day*.c')
+DAYS_DEBUG   := $(DAYS_SRC:$(SRC_DIR)/%.c=$(DEBUG_DIR)/%.o)
+DAYS_RELEASE := $(DAYS_SRC:$(SRC_DIR)/%.c=$(RELEASE_DIR)/%.o)
 
-INCLUDE = \
-	src/collections/arrayhashmap.h \
-	src/collections/arrayhashset.h \
-	src/collections/arraylist.h \
-	src/collections/intarraylist.h \
-	src/math/integer.h \
-	src/math/vectors.h \
-	src/days/aoc.h \
-	src/lib.h \
-	src/sorting.h \
-	src/strings.h \
-	src/utils.h \
-	src/void.h
+LIB_SRC      := $(shell find $(LIB_DIR) -name '*.c' ! -name '*.template.c')
+LIB_INCLUDE  := $(shell find $(LIB_DIR) -name '*.h' -o -name '*.template.*')
 
-SRC = \
-	src/collections/arrayhashmap.c \
-	src/collections/arrayhashset.c \
-	src/collections/arraylist.c \
-	src/collections/intarraylist.c \
-	src/math/integer.c \
-	src/math/vectors.c \
-	src/days/aoc.c \
-	src/lib.c \
-	src/sorting.c \
-	src/strings.c \
-	src/utils.c \
-	src/void.c
-
-# Test sources
-# These are always #include-ed directly in the main unittest file
-# However, we still need to track them for modifications so we know when to re-make the test binary
-TEST_SRC = \
-	test/collections/testarrayhashmap.c \
-	test/collections/testarraylist.c \
-	test/collections/testintarraylist.c \
-	test/math/testinteger.c \
-	test/teststrings.c \
-	test/unittest.c
-
+TEST_SRC     := $(shell find $(TEST_DIR) -name '*.c' ! -name '*.template.c')
+TEST_INCLUDE := $(shell find $(TEST_DIR) -name '*.template.c') $(TEST_DIR)/unittest.h 
 
 .DEFAULT_GOAL = run
 
@@ -65,14 +34,13 @@ help :
 	@echo "| Alcatraz Escapee (Alex O'Neill) Advent Of Code 2017 in C Solutions |"
 	@echo "+--------------------------------------------------------------------+"
 	@echo "Options:"
-	@echo "  make day=XX        - Run day XX"
-	@echo "  make all           - Run all days"
+	@echo "  make day=XX        - Build and run day XX"
+	@echo "  make all           - Build and run all days"
+	@echo "  make test          - Build and run unit tests"
+	@echo "  make check day=XX  - Build and run day XX with Valgrind"
+	@echo "  make checkall      - Build and run all days with Valgrind"
+	@echo "  make checktest     - Build and run unit tests with Valgrind"
 	@echo "  make clean         - Cleans all compiled binaries"
-	@echo "  make test          - Run unit tests"
-	@echo "  make check day=XX  - Run day XX with Valgrind"
-	@echo "  make checkall      - Run all days with Valgrind"
-	@echo "  make checktest     - Run unit tests with Valgrind"
-	@echo "  make expand day=XX - Runs the preprocessor against day XX"
 
 .PHONY: run
 run: out/release/day$(day).o
@@ -82,21 +50,15 @@ run: out/release/day$(day).o
 		out/release/day$(day).o ; \
 	fi
 
-.PHONY: out/day.o
-
 .PHONY: all
 all: $(RELEASE_DAYS)
 	-@for day in $(RELEASE_DAYS) ; do \
         $$day ; \
     done
 
-.PHONY: clean
-clean :
-	rm -rf out
-
 .PHONY: test
-test : out/debug/test.o
-	-@out/debug/test.o
+test : out/release/test.o
+	-@out/release/test.o
 
 .PHONY: check
 check : out/debug/day$(day).o
@@ -116,23 +78,24 @@ checkall : $(DEBUG_DAYS)
 checktest : out/debug/test.o
 	-@$(VALGRIND) out/debug/test.o
 
-.PHONY: expand
-expand :
-	-@if [ "$(day)" = "" ]; then \
-		echo "No day provided - try with make expand day=XX " ; \
-	else \
-		mkdir -p out/debug ; \
-		$(CC_EXPAND) src/days/day$(day).c >> out/debug/day$(day).c ; \
-	fi
+.PHONY: clean
+clean :
+	rm -rf out
 
-out/debug/day%.o : src/days/day%.c $(SRC) $(INCLUDE)
-	mkdir -p out/debug
-	$(CC_DEBUG) $< $(SRC) -o $@
+# Release Configuraton
+$(RELEASE_DIR)/day%.o : src/main/day%.c $(LIB_SRC) $(LIB_INCLUDE)
+	mkdir -p $(RELEASE_DIR)
+	$(GCC_RELEASE) $< $(LIB_SRC) -o $@
 
-out/debug/test.o : $(TEST_SRC) test/unittest.h $(SRC) $(INCLUDE)
-	mkdir -p out/debug
-	$(CC_DEBUG) test/unittest.c $(SRC) -o out/debug/test.o
+$(RELEASE_DIR)/test.o : $(TEST_SRC) $(LIB_SRC) $(TEST_INCLUDE) $(INCLUDE)
+	mkdir -p $(RELEASE_DIR)
+	$(GCC_DEBUG) $(TEST_SRC) $(LIB_SRC) -o $(RELEASE_DIR)/test.o
 
-out/release/day%.o : src/days/day%.c $(SRC) $(INCLUDE)
-	mkdir -p out/release
-	$(CC_RELEASE) $< $(SRC) -o $@
+# Debug Configuration
+$(DEBUG_DIR)/day%.o : src/main/day%.c $(LIB_SRC) $(LIB_INCLUDE)
+	mkdir -p $(DEBUG_DIR)
+	$(GCC_DEBUG) $< $(LIB_SRC) -o $@
+
+$(DEBUG_DIR)/test.o : $(TEST_SRC) $(LIB_SRC) $(TEST_INCLUDE) $(INCLUDE)
+	mkdir -p $(DEBUG_DIR)
+	$(GCC_DEBUG) $(TEST_SRC) $(LIB_SRC) -o $(DEBUG_DIR)/test.o
