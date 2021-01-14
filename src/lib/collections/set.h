@@ -13,11 +13,8 @@ typedef Map Set;
 typedef Iterator(Map) Iterator(Set);
 
 // Like HashMap, HashSet is not a full class but still supports new(), del() and format()
-// Since most are copies of the hash map implementation, they are simply redirected through macros
-
-#define Set__new(initial_size, key_class) new(Map, initial_size, key_class, class(Void))
-#define Set__del(set) del(Map, set)
-
+Set Set__new(uint32_t initial_size, Class key_class);
+void Set__del(Set set);
 String Set__format(Set set);
 
 // Iterator

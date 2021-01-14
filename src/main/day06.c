@@ -9,21 +9,25 @@ int main(void)
     uint32_t part2 = 0;
 
     uint32_t mask = SIZE - 1; // This only works when SIZE is a multiple of 2
-    PANIC_IF(next_highest_power_of_two(SIZE) != SIZE, "This solution uses bit fiddling hacks that only work with SIZE = 1 << N");
+    panic_if(next_highest_power_of_two(SIZE) != SIZE, "This solution uses bit fiddling hacks that only work with SIZE = 1 << N");
 
-    ArrayHashMap* found = new(ArrayHashMap, 1000, class(IntArrayList), class(Int32));
-    IntArrayList* state = ial_create_from_array(INPUT, SIZE);
+    Map found = new(Map, 1000, class(PrimitiveArrayList(uint32_t)), class(Int32));
+    PrimitiveArrayList(uint32_t) state = new(PrimitiveArrayList(uint32_t), SIZE);
+    for (uint32_t i = 0; i < SIZE; i++)
+    {
+        al_append(state, INPUT[i]);
+    }
 
     uint32_t cycle = 0;
-    ahm_put(found, state, new(Int32, cycle));
+    map_put(found, state, new(Int32, cycle));
     loop
     {
-        IntArrayList* next = copy(IntArrayList, state);
+        PrimitiveArrayList(uint32_t) next = copy(PrimitiveArrayList(uint32_t), state);
 
         // Compute the smallest memory bank
         uint32_t max_index = 0;
-        int32_t max_value = ial_get(next, 0);
-        for iter(IntArrayList, it, next)
+        uint32_t max_value = al_get(next, 0);
+        for iter(PrimitiveArrayList(uint32_t), it, next)
         {
             if (it.value > max_value)
             {
@@ -33,12 +37,12 @@ int main(void)
         }
 
         // Remove all from the minimum bank
-        ial_set(next, max_index, 0);
+        al_set(next, max_index, 0);
 
         // Distribute that memory into all other banks
         // This could be optimized if the banks had absurdly large values, but since we're only dealing with ~ the same amount per bank, we don't expect to iterate this loop much longer than nessecary
         uint32_t index = (max_index + 1) & mask;
-        for (int32_t i = 0; i < max_value; i++)
+        for (uint32_t i = 0; i < max_value; i++)
         {
             next->values[index]++;
             index = (index + 1) & mask;
@@ -46,24 +50,21 @@ int main(void)
 
         cycle++;
 
-        if (ahm_key_in(found, next))
+        if (map_contains_key(found, next))
         {
             // Detected a cycle
             part1 = cycle;
-            part2 = cycle - *(int32_t*) ahm_get(found, next);
+            part2 = cycle - *(Int32) map_get(found, next);
 
-            del(IntArrayList, next);
+            del(PrimitiveArrayList(uint32_t), next);
             break;
         }
 
-        ahm_put(found, next, new(Int32, cycle));
+        map_put(found, next, new(Int32, cycle));
         state = next;
     }
 
-    ANSWER_UINT(6, 1, 14029, part1);
-    ANSWER_UINT(6, 2, 2765, part2);
+    del(Map, found);
 
-    del(ArrayHashMap, found);
-
-    return 0;
+    ANSWER(14029, part1, 2765, part2);
 }

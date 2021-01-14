@@ -19,10 +19,18 @@ impl_primitive_class(UInt64, uint64_t);
 
 // Implementation of Class and Void
 
+impl_class(Class);
+
 void Class__del(Class cls) {}
 Class Class__copy(Class cls) { return cls; }
-bool Class__equals(Class left, Class right) { return left == right; } // Pointer equality, as there is only one instance per class
-int32_t Class__compare(Class left, Class right) { panic("compare() is not defined for class Class"); return 0; }
+bool Class__equals(Class left, Class right) { return left == right; }
+
+int32_t Class__compare(Class left, Class right)
+{
+    panic("compare() is not defined for class Class"); 
+    return 0;
+}
+
 uint32_t Class__hash(Class cls)
 {
     // Hash the name as a string
@@ -33,6 +41,7 @@ uint32_t Class__hash(Class cls)
     }
     return h;
 }
+
 String Class__format(Class cls)
 {
     String s = new(String, "Class<");
@@ -40,6 +49,8 @@ String Class__format(Class cls)
     str_append_char(s, '>');
     return s;
 }
+
+impl_class(Void);
 
 void Void__del(Void v) {}
 Void Void__copy(Void v) { return NULL; }
@@ -112,6 +123,13 @@ pointer_t __malloc(slice_t name, uint32_t size)
     pointer_t ptr = malloc(size);
     panic_if_null(ptr, "Out of Memory: Cannot allocate %d bytes for %s", size, name);
     return ptr;
+}
+
+void __realloc(slice_t name, pointer_t* ref_ptr, uint32_t size)
+{
+    pointer_t realloc_ptr = realloc(*ref_ptr, size);
+    panic_if_null(realloc_ptr, "Out of Memory: Cannot allocate %d bytes for %s", size, name);
+    *ref_ptr = realloc_ptr;
 }
 
 // Move Semantics

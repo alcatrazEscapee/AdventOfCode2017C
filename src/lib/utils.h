@@ -5,6 +5,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+// File IO
+
+String read_file(slice_t file_name, uint32_t estimated_size);
+
 // String Printing
 // Adds println, and variants which accept Strings destructively.
 
@@ -22,10 +26,10 @@ uint32_t rand_uint32_in(uint32_t upper_exclusive);
 
 // Sorting
 
-typedef bool (*FnSortingLessThan) (void*, uint32_t, uint32_t);
-typedef void (*FnSortingSwap) (void*, uint32_t, uint32_t);
+typedef bool (*FnSortingLessThan) (pointer_t, uint32_t, uint32_t);
+typedef void (*FnSortingSwap) (pointer_t, uint32_t, uint32_t);
 
-void sorting_qsort_recursive(void* instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, int32_t low, int32_t high);
-uint32_t sorting_qsort_partition(void* instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, int32_t low, int32_t high);
+void sorting_qsort_recursive(pointer_t instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, uint32_t low, uint32_t high);
+uint32_t sorting_qsort_partition(pointer_t instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, uint32_t low, uint32_t high);
 
 #endif

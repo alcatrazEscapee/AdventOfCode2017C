@@ -189,12 +189,46 @@ bool StringSplit__iterator__test(Iterator(StringSplit)* it, String string, slice
 
 // Instance Methods
 
+// Char + Bool can be simply optimized to direct slice insertions, integer types use str_append_format
 void str_append_char(String string, char c)
 {
     str_ensure_length(string, string->length + 1);
     string->slice[string->length] = c;
     string->slice[string->length + 1] = '\0';
     string->length += 1;
+}
+
+void str_append_bool(String string, bool b)
+{
+    if (b)
+    {
+        str_append_slice(string, "true");
+    }
+    else
+    {
+        str_append_slice(string, "false");
+    }
+}
+
+// Other integer methods 
+void str_append_int32_t(String string, int32_t i)
+{
+    str_append_format(string, "%d", i);
+}
+
+void str_append_int64_t(String string, int64_t i)
+{
+    str_append_format(string, "%ld", i);
+}
+
+void str_append_uint32_t(String string, uint32_t i)
+{
+    str_append_format(string, "%u", i);
+}
+
+void str_append_uint64_t(String string, uint64_t i)
+{
+    str_append_format(string, "%lu", i);
 }
 
 void str_append_slice(String string, slice_t text)
@@ -215,6 +249,23 @@ void str_append_string(String string, String other)
     del(String, other);
 }
 
+void str_append_format(String string, slice_t format_string, ...)
+{
+    va_list arg;
+
+    va_start(arg, format_string);
+    uint32_t length = vsnprintf(NULL, 0, format_string, arg);
+    va_end(arg);
+
+    str_ensure_length(string, string->length + length);
+
+    va_start(arg, format_string);
+    vsnprintf((string->slice) + string->length, length + 1, format_string, arg);
+    va_end(arg);
+
+    string->length += length;
+}
+
 void str_pop(String string, uint32_t amount)
 {
     panic_if(amount > string->length, "Tried to pop %d characters from the string '%s' which was only length %d at str_pop", amount, string->slice, string->length);
@@ -222,20 +273,15 @@ void str_pop(String string, uint32_t amount)
     string->slice[string->length] = '\0';
 }
 
-bool str_in(String string, uint32_t index)
-{
-    return index < string->length;
-}
-
 char str_get_char(String string, uint32_t index)
 {
-    panic_if(!str_in(string, index), "String index out of bounds: %d in {slice='%s', size=%d, length=%d} at str_get_char", index, string->slice, string->size, string->length);
+    panic_if(index >= string->length, "String index out of bounds: %d in {slice='%s', size=%d, length=%d} at str_get_char", index, string->slice, string->size, string->length);
     return string->slice[index];
 }
 
 void str_set_char(String string, uint32_t index, char c)
 {
-    panic_if(!str_in(string, index), "String index out of bounds: %d in {slice='%s', size=%d, length=%d} at str_set_char", index, string->slice, string->size, string->length);
+    panic_if(index >= string->length, "String index out of bounds: %d in {slice='%s', size=%d, length=%d} at str_set_char", index, string->slice, string->size, string->length);
     string->slice[index] = c;
 }
 
@@ -333,13 +379,8 @@ static void str_ensure_length(String string, uint32_t required_length)
     if (required_size > string->size)
     {
         // Resize the string
-        uint32_t new_size = next_highest_power_of_two(required_size);
-        slice_t new_slice = safe_malloc(slice_t, sizeof(char) * new_size);
-
-        memcpy(new_slice, string->slice, sizeof(char) * string->length); // Copy the existing string to the new slice
-        free(string->slice); // Free the old slice
-        string->slice = new_slice; // Point the string at the new slice
-        string->size = new_size; // Update the size of the string
+        string->size = required_size * 2; // Update the size of the string
+        safe_realloc(slice_t, string->slice, sizeof(char) * string->size); // Reallocate the slice
 
         // Initialize the rest of the new slice with nulls
         for (uint32_t i = string->length; i < string->size; i++)

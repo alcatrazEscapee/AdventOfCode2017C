@@ -47,7 +47,7 @@ run: out/release/day$(day).o
 	-@if [ "$(day)" = "" ]; then \
 		echo "No day provided - try with make day=XX" ; \
 	else \
-		out/release/day$(day).o ; \
+		$(RELEASE_DIR)/day$(day).o ; \
 	fi
 
 .PHONY: all
@@ -57,15 +57,15 @@ all: $(RELEASE_DAYS)
     done
 
 .PHONY: test
-test : out/release/test.o
-	-@out/release/test.o
+test : $(RELEASE_DIR)/test.o
+	-@$(RELEASE_DIR)/test.o
 
 .PHONY: check
-check : out/debug/day$(day).o
+check : $(DEBUG_DIR)/day$(day).o
 	-@if [ "$(day)" = "" ]; then \
 		echo "No day provided - try with make check day=XX" ; \
 	else \
-		$(VALGRIND) out/debug/day$(day).o ; \
+		$(VALGRIND) $(DEBUG_DIR)/day$(day).o ; \
 	fi
 
 .PHONY: checkall
@@ -75,15 +75,15 @@ checkall : $(DEBUG_DAYS)
 	done
 
 .PHONY: checktest
-checktest : out/debug/test.o
-	-@$(VALGRIND) out/debug/test.o
+checktest : $(DEBUG_DIR)/test.o
+	-@$(VALGRIND) $(DEBUG_DIR)/test.o
 
 .PHONY: clean
 clean :
 	rm -rf out
 
 # Release Configuraton
-$(RELEASE_DIR)/day%.o : src/main/day%.c $(LIB_SRC) $(LIB_INCLUDE)
+$(RELEASE_DIR)/day%.o : $(SRC_DIR)/day%.c $(SRC_DIR)/aoc.h $(LIB_SRC) $(LIB_INCLUDE)
 	mkdir -p $(RELEASE_DIR)
 	$(GCC_RELEASE) $< $(LIB_SRC) -o $@
 
@@ -92,7 +92,7 @@ $(RELEASE_DIR)/test.o : $(TEST_SRC) $(LIB_SRC) $(TEST_INCLUDE) $(LIB_INCLUDE)
 	$(GCC_DEBUG) $(TEST_SRC) $(LIB_SRC) -o $(RELEASE_DIR)/test.o
 
 # Debug Configuration
-$(DEBUG_DIR)/day%.o : src/main/day%.c $(LIB_SRC) $(LIB_INCLUDE)
+$(DEBUG_DIR)/day%.o : $(SRC_DIR)/day%.c $(SRC_DIR)/aoc.h $(LIB_SRC) $(LIB_INCLUDE)
 	mkdir -p $(DEBUG_DIR)
 	$(GCC_DEBUG) $< $(LIB_SRC) -o $@
 

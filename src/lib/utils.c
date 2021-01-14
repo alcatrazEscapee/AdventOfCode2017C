@@ -1,5 +1,27 @@
 #include "utils.h"
 
+// File IO
+
+String read_file(slice_t file_name, uint32_t estimated_size)
+{
+    FILE* file = fopen(file_name, "r");
+    panic_if_null(file, "Unable to open file '%s'", file_name);
+
+    String s = str_create_with_length(estimated_size);
+    char c = '\0';
+    while ((c = fgetc(file)) != EOF)
+    {
+        if (c != '\r')
+        {
+            str_append_char(s, c);
+        }
+    }
+
+    fclose(file);
+
+    return s;
+}
+
 
 // String Printing
 
@@ -62,29 +84,47 @@ uint32_t rand_uint32_in(uint32_t upper_exclusive)
 
 // Sorting
 
-void sorting_qsort_recursive(void* instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, int32_t low, int32_t high)
+void sorting_qsort_recursive(pointer_t instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, uint32_t low, uint32_t high)
 {
-    if (low < high)  
-    {  
-        uint32_t pi = sorting_qsort_partition(instance, lt_fn, swap_fn, low, high);  
-  
+    // Minor optimization: sort cases of one or two elements directly
+    switch (high - low)
+    {
+        case 1:
+            if (lt_fn(instance, high, low))
+            {
+                swap_fn(instance, high, low);
+            }
+        case 0:
+            return;
+    }
+    // All other cases, recursive qsort.
+    // Guard conditions against underflow when low = pi or pi = high
+    uint32_t pi = sorting_qsort_partition(instance, lt_fn, swap_fn, low, high);  
+    if (pi - low > 1)
+    {
         sorting_qsort_recursive(instance, lt_fn, swap_fn, low, pi - 1);  
-        sorting_qsort_recursive(instance, lt_fn, swap_fn, pi + 1, high);  
-    }  
+    }
+    if (high - pi > 1)
+    {
+        sorting_qsort_recursive(instance, lt_fn, swap_fn, pi + 1, high);
+    }
 }
 
-uint32_t sorting_qsort_partition(void* instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, int32_t low, int32_t high)
+uint32_t sorting_qsort_partition(pointer_t instance, FnSortingLessThan lt_fn, FnSortingSwap swap_fn, uint32_t low, uint32_t high)
 {
-    int32_t i = (low - 1); // Index of smaller element
-    for (int32_t j = low; j <= high - 1; j++)
+    // Take the last element to be the pivot
+    // Avoid issues with underflow by taking i = low rather than low - 1 as seen in some examples
+    uint32_t i = low;
+    for (uint32_t j = low; j < high; j++)
     {
         // If current element is smaller than the pivot
         if (lt_fn(instance, j, high))
         {
-            i++; // increment index of smaller element
+            // swap and increment index of smaller element
             swap_fn(instance, i, j);
+            i++;
         }
     }
-    swap_fn(instance, i + 1, high);
-    return (i + 1);
+    swap_fn(instance, i, high);
+    return i;
 }

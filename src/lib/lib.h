@@ -485,20 +485,15 @@ if (!setjmp(__exception_jmp_buf))
 // Standard Memory Allocations
 #define class_malloc(cls) __malloc("Class<" LITERAL(cls) ">", sizeof(struct CONCAT(cls, __struct)))
 #define safe_malloc(cls, size) __malloc(LITERAL(cls), size)
+#define safe_realloc(cls, ptr, size) __realloc(LITERAL(cls), (pointer_t*) (& (ptr)), size)
 
 // Calls malloc() guarded with an panic
 // Return value is gaurenteed to be non null
 pointer_t __malloc(slice_t name, uint32_t size);
+void __realloc(slice_t name, pointer_t* ref_ptr, uint32_t size);
 
 // Rust style loop statements
 #define loop while (true)
-
-// Collection methods for iterators
-// Inputs are an iter() statement, a new collection, and a statement which accumulates elements of the iterator into the collection
-// Usage:
-// ArrayList* list = collect(iter(...), new(...), ...)
-#define collect(iter_statement, collection, collector_statement) collection; { for iter_statement { collector_statement; }}
-
 
 // Move / Ownership Semantics
 //

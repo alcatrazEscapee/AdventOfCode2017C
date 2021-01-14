@@ -2,48 +2,44 @@
 
 int main(void)
 {
-    String* input = read_file("./inputs/day05.txt", 1000);
-    IntArrayList* code = new(IntArrayList, 1000);
+    String input = read_file("./inputs/day05.txt", 1000);
+    PrimitiveArrayList(int32_t) code = new(PrimitiveArrayList(int32_t), 1000);
     
     for iter(StringSplit, it, input, "\n")
     {
-        ial_append(code, str_parse_int32(it.value));
+        al_append(code, str_parse_int32(it.value));
     }
 
     del(String, input);
-
-    IntArrayList* active_code = copy(IntArrayList, code);
+    PrimitiveArrayList(int32_t) active_code = copy(PrimitiveArrayList(int32_t), code);
 
     int32_t pointer = 0;
     uint32_t part1 = 0;
     while (pointer >= 0 && pointer < (int32_t) active_code->length)
     {
-        int32_t value = ial_get(active_code, pointer);
-        ial_set(active_code, pointer, value + 1);
+        int32_t value = al_get(active_code, pointer);
+        al_set(active_code, pointer, value + 1);
         pointer += value;
         part1++;
     }
 
-    del(IntArrayList, active_code);
-    active_code = copy(IntArrayList, code);
+    del(PrimitiveArrayList(int32_t), active_code);
+    active_code = copy(PrimitiveArrayList(int32_t), code);
     
     uint32_t part2 = 0;
     pointer = 0;
 
     while (pointer >= 0 && pointer < (int32_t) active_code->length)
     {
-        int32_t value = ial_get(active_code, pointer);
+        int32_t value = al_get(active_code, pointer);
         int32_t offset = value >= 3 ? -1 : 1;
-        ial_set(active_code, pointer, value + offset);
+        al_set(active_code, pointer, value + offset);
         pointer += value;
         part2++;
     }
 
-    del(IntArrayList, code);
-    del(IntArrayList, active_code);
+    del(PrimitiveArrayList(int32_t), code);
+    del(PrimitiveArrayList(int32_t), active_code);
 
-    ANSWER_UINT(5, 1, 343467, part1);
-    ANSWER_UINT(5, 2, 24774780, part2);
-
-    return 0;
+    ANSWER(343467, part1, 24774780, part2);
 }

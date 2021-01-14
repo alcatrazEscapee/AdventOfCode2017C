@@ -57,13 +57,33 @@ uint32_t str_slice_len(slice_t slice);
 
 // Instance Methods
 
+// Generic specialization
+#define str_append(string, value) _Generic((value), \
+    char: str_append_char, \
+    bool: str_append_bool, \
+    int32_t: str_append_int32_t, \
+    int64_t: str_append_int64_t, \
+    uint32_t: str_append_uint32_t, \
+    uint64_t: str_append_uint64_t, \
+    slice_t: str_append_slice, \
+    String: str_append_string \
+) (string, value)
+
+// Primitive Type Methods
 void str_append_char(String string, char c);
+void str_append_bool(String string, bool b);
+void str_append_int32_t(String string, int32_t i);
+void str_append_int64_t(String string, int64_t i);
+void str_append_uint32_t(String string, uint32_t i);
+void str_append_uint64_t(String string, uint64_t i);
+
 void str_append_slice(String string, slice_t text);
 void str_append_string(String string, String other); // Consumes other
 
+void str_append_format(String string, slice_t format_string, ...); // Formats using printf-style formatting, appending to an existing string
+
 void str_pop(String string, uint32_t amount);
 
-bool str_in(String string, uint32_t index);
 char str_get_char(String string, uint32_t index);
 void str_set_char(String string, uint32_t index, char c); // Sets the char at a given index
 
