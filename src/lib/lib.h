@@ -482,44 +482,23 @@ if (!setjmp(__exception_jmp_buf))
 } while (0)
 
 
+// Misc. Features
+
 // Standard Memory Allocations
 #define class_malloc(cls) __malloc("Class<" LITERAL(cls) ">", sizeof(struct CONCAT(cls, __struct)))
 #define safe_malloc(cls, size) __malloc(LITERAL(cls), size)
 #define safe_realloc(cls, ptr, size) __realloc(LITERAL(cls), (pointer_t*) (& (ptr)), size)
 
-// Calls malloc() guarded with an panic
-// Return value is gaurenteed to be non null
+// Calls malloc() guarded with an panic. Return value is gaurenteed to be non null
 pointer_t __malloc(slice_t name, uint32_t size);
+
+// Calls realloc() guarded with a panic. ref_ptr is gaurenteed to be non null on return.
 void __realloc(slice_t name, pointer_t* ref_ptr, uint32_t size);
 
-// Rust style loop statements
+// Rust 'loop' keyword
 #define loop while (true)
 
-// Move / Ownership Semantics
-//
-// Most functions have specific contracts about how they manage ownership of pointers
-// There are a few notions, simplified from C++ / C practices, and Rust:
-//
-// 1. Borrowing:
-// - A pointer is passed by value (T* t) to a function.
-// - The function MUST NOT call del(T, t) during it's execution, and at the return of the function, the pointer must still be valid
-//
-// 2. Moving:
-// - A pointer is passed by reference (T** t) to a function.
-// - The pointer may be destroyed at the end of this function. (e.g. the function called either del(T, *t) or v = move(T, *t))
-// - This is heavilly context dependent. It may apply, e.g. to iterator methods.
-// - In the body of an iterator, the main code MAY take ownership of the internal value by calling move(T, &t). This value will then by NULL'd (and the required call to del(T, t) will noop)
-//
-// 3. Destroying
-// - A pointer is passed by value (T* t) to a function
-// - The function takes ownership of the pointer, and it IS NOT valid to use it after passing it, or call del(T, t).
-// - Examples include del(T, t), which takes ownership of 't'
-//
-// You can only call move() when given a MUTABLE BORROW (which must be unique)
-// Then, the original value is nullified, there are no other references, and you now have ownership of the reference
-// Thus, a BORROW cannot be upgraded into ownership, but a MUTABLE BORROW can be.
-// For example, an iterator through an ArrayList<String> gives a IMMUTABLE BORROW. There are two references (the list, owner, and the iterator, borrowing) to the value
-// Another example, the StringLines iterator owns each string instance, and the loop code is given a MUTABLE BORROW. It can take ownership through calling move()
+// Move Semantics
 
 #define move(ptr) (__move((void**)(& (ptr))))
 void* __move(void** ref_ptr);
@@ -536,21 +515,6 @@ void* __move(void** ref_ptr);
 // for iter(Class, it, other args...) {
 //     it.value
 // }
-//
-// The iterator struct itself is stack allocated and does not need to be cleaned up.
-// In order to define an iterator of type T, the following methods (or macro equivilants) are required:
-// Iterator<T> T__iterator__start(args...)
-// bool T__iterator__test(Iterator<T>* it, args...)
-// void T__iterator__next(Iterator<T>* it, args...)
-//
-// Additionally, for generic collections, the following variant can be used:
-// for type_iter(Class, Type, other args...) {
-//     it.parent = an Iterator<Class>
-//     it.value = the same as it.parent.value, but as Type
-// }
-// This allows iteration over generic data structures without first casting or storing the value (often a void*) down to the desired type.
-// For instance, iterating over an ArrayList<String> with iter() would require ((String*) it.value)->length, but with type_iter(), it can be referenced as it.value->length
-
 #define Iterator(cls) CONCAT(cls, __iterator)
 
 #define iter(cls, it, args...) ( \

@@ -54,7 +54,7 @@ Classes are fundamentally just pointers to structs. However, in order to be able
 
 The constructor of a class creates and returns a new instance of the provided class.
 
-```c
+```cpp
 new(T, args...)
 // cls is the class being constructed
 // args... are specific arguments for that classes constructor.
@@ -164,7 +164,7 @@ This is heavily context dependent. It may apply, e.g. to iterator methods. In th
 
 #### Destroying
 
-- A pointer is passed by value (`T t`) to a function 
+- A pointer is passed by value (`T t`) to a function.
 - The function takes ownership of the pointer, and it IS NOT valid to use it after passing it, or call `del(T, t)`.
 - Examples include `del(T, t)`, which takes ownership of 't'
 
@@ -176,15 +176,131 @@ Another example, the `StringLines` iterator owns each string instance, and the l
 
 ## Iterators
 
-Iterators
+An `Iterator<T>` and the `iter` statement are wrappers for iterating over collections in which the iteration method is non-standard. They are macros which replace the body of a `for (...)` statement, and obey a common contract of how the iterator behaves.
+
+An `Iterator<T>` is a struct which contains at least the following:
+
+```c
+typedef struct {
+    T value;
+} Iterator(T);
+```
+
+The arguments to an `iter` statement will depend on the class of the object being iterated, but in general all `iter()` statements have at least the following arguments:
+
+- `Class cls` : This is the class name (or method name) that is being iterated. This can be a class which supports iteration (such as `String`, or `ArrayList`), or it can be a specific iterator method name (such as `StringSplit`).
+- `Iterator(T) it` : This is the variable name for the iterator that is declared within the loop.
+- `T collection` : This is the object that is being iterated over.
+
+Additional arguments may be required as per the individual iterators (for example, `StringSplit` requires an additional argument `slice_t delim`, which is the characters to split the input string on). For example:
+
+```cpp
+String s = new(String, "abc");
+for iter(String, it, s) {
+    printf("'%c', ", it.value);
+}
+// Prints:
+// 'a', 'b', 'c', 
+```
+
+There is a specialization of iterators for generic collections. For example, iteration through an `ArrayList<T>` will have an iterator with a `pointer_t value` for each element. In the case that a specific type is known, the `type_iter()` statement can be used instead. This wraps a standard iterator call with a generically specialized one, using an anonymous struct declaration. It requires one additional argument, immediately after the class name:
+
+- `Type type` : The type of the `value` variable to be declared.
+
+The `Iterator(T)` exposed by the `type_iter()` statement is a declaration of the following struct:
+
+```c
+struct {
+    Iterator(T) parent;
+    Type value;
+}
+```
+
+It can be used as such:
+
+```cpp
+ArrayList list = /* Suppose this is an ArrayList<String> */
+
+for iter(ArrayList, it, list) {
+    // it.value is typed pointer_t, and this cast is required
+    println("Element: %s", ((String)it.value)->slice);
+}
+
+for type_iter(ArrayList, String, it, list) {
+    // it.value is typed String, and no cast is required here
+    println("Element: %s", it.value->slice);
+}
+```
+
+Iterators are declared through three methods, often implemented as macros. These are:
+
+```cpp
+// Returns a struct initializer for a given iterator
+Iterator(T) T__iterator__start(args...);
+
+// Tests the iterator if it has reached the end of the collection
+bool T__iterator__test(Iterator(T)* it, args...);
+
+// Advances the iterator to the next element in the collection
+void T__iterator__next(Iterator(T)* it, args...);
+```
+
+These are composed in (roughly) the following manner via the expansion of the `iter` macro:
+
+```cpp
+for (Iterator(T) it = T__iterator__start(...); T__iterator__test(...); T__iterator__next(...))
+```
 
 ## Panics
 
-Panics
+Panics, and exception handling, are the primary methods to write error handling code. This operates on a few principles:
 
-### Error Handling
+- Panics (The name and idea borrowed from Rust's `panic!()` macro), are invoked typically in *unrecoverable* situations. These are errors such as Out of Memory or Index Out of Bounds. The implementation of `panic`, `panic_if`, and `panic_if_null` are designed to be as clear as possible about where the error occurred (including debugging information such as the current file and line number, and function), and the reason for failure. They are designed to support what should be program level assertions.
+- `try` / `catch` statements are very specialized versions of their usage in languages such as Java. They can catch a single `panic()`, they cannot be nested, and they WILL LIKELY result in memory leaks due to a lack of cleanup from where the panic was invoked. They are designed to help debug situations where errors have already occurred, such as in the unit test framework.
 
-Error handling: `try` / `catch` / `finally` statements
+Panic macros come in three flavors:
+
+```c
+// Unconditional panic. Arguments are as to printf
+void panic(slice_t format_string, ...);
+
+// Conditional panic. Arguments are as to printf. Use preferrentially over if (x) panic() as stringification is used to debug the actual condition
+void panic_if(bool condition, slice_t format_string, ...);
+
+// Conditional panic. Arguments are as to printf. Use preferrentially over if (x != NULL) panic() for the above reason.
+void panic_if_null(T left, T right, slice_t format_string, ...);
+```
+
+Panics are implemented entirely through macros. When they are invoked, they will either (depending if the global context for `try` / `catch` handling is set), invoke `longjmp`, or `exit(1)`, only after building a detailed report of the error, and if exiting, printing the error.
+
+Try / Catch statements are a very primitive implementation of panic recovery. They have many limitations:
+
+- They cannot be nested. if `try` is reached within another `try` block, it itself will invoke `panic()`.
+- Due to a lack of cleanup abilities (such as pointers dropping out of scope and being cleaned up) that are present in Rust or C++, this very often will lead to memory leaks if a panic is invoked.
+- A `try` block cannot be returned from within, as it will leak important memory local to the `try` block.
+- There is no notion of catching specific exceptions, or handling them outside of the error text.
+
+That said, `try catch` statements can be used in the following manner:
+
+```cpp
+try
+{
+    // code that WILL NOT invoke try, but MAY invoke a panic() variant
+    // IF return; is invoked, all possible code that may panic MUST be prefixed with a finally; statement:
+    int32_t x = complex_result();
+    finally;
+    return x;
+}
+catch
+{
+    // will be executed ONLY if the try block paniced
+    // To obtain the panic error, the statement 'exception' can be used, which will return a new instance of a String detailing the error info to the caller
+    // Example:
+    String err = exception;
+    str_println(err);
+}
+finally;
+```
 
 ## Collections
 
@@ -192,11 +308,19 @@ Library collection types. Templates and standard types.
 
 ### ArrayList
 
+A basic auto-resizable, array backed list. It supports generic `pointer_t` element values, and methods that are generic for any `ArrayList` or `PrimitiveArrayList<T>` implementation.
+
 ### PrimitiveArrayList
+
+A type-specific auto-resizable array backed list. These are implemented through template files for every primitive type. The type is `PrimitiveArrayList(type)`. This is more efficient that using boxed / heap allocated class types such as `ArrayList<Int32>`.
 
 ### Map
 
+A hash based key-value pair map. It stores values densely in two backing arrays, and uses linear probing for `O(1)` access, avoiding excessive indirection e.g. through a bucket / linked list map implementation.
+
 ### Set
+
+This is a hash based set, with `O(1)` contains checks. It is implemented as a `Map<T, Void>`. (As such, it is slightly wasteful with memory due to allocating a large array of `pointer_t`s that is only ever filled with `NULL`). It may be replaced with a dedicated hash set implementation at some time in the future.
 
 ### Tuples
 
