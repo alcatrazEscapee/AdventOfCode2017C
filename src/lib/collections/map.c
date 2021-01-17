@@ -164,7 +164,7 @@ static Result(pointer_t) map_get_internal(Map map, pointer_t key)
     uint32_t index = hash_c(map->key_class, key) & mask;
     pointer_t current_key = map->keys[index];
     
-    while (current_key != NULL) // The map must always have at least one empty spot - so this is gaurentee'd to terminate
+    while (current_key != NULL) // The map must always have at least one empty spot - so this is gaurenteed to terminate
     {
         // Test current key
         if (equals_c(map->key_class, current_key, key))

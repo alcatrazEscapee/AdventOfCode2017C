@@ -1,34 +1,57 @@
 // An array backed hash set
-// Has O(1) contains checks (ahs_in)
-// Implemented using an ArrayHashMap with NULL values
+// Implementation is a subset of the Map implementation, using just the keys array
+// Cannot contain NULL values
 
 #include "../lib.h"
-#include "map.h"
 
 #ifndef COLLECTIONS_SET_H
 #define COLLECTIONS_SET_H
 
-// A set is just a map in disguise
-typedef Map Set;
-typedef Iterator(Map) Iterator(Set);
+struct Set__struct
+{
+    pointer_t* values; // Value array
+    Class value_class; // The value class
+    uint32_t size; // The length of the backing array. Must be a power of 2
+    uint32_t length; // The number of entries
+};
 
-// Like HashMap, HashSet is not a full class but still supports new(), del() and format()
-Set Set__new(uint32_t initial_size, Class key_class);
+typedef struct Set__struct * Set;
+
+// This is a pseudo class
+// It does not have a Class<T> object, nor implement all methods of the class
+// However, it can still be used with new(), del(), and format()
+
+declare_constructor(Set, uint32_t initial_size, Class value_class);
+
 void Set__del(Set set);
 String Set__format(Set set);
 
 // Iterator
+// test() is defined as a function in order to skip otherwise empty entries
+// We still increment during next() (but do not assign key/value) in order to assign *after* the test passes, and avoid running off the end of the array.
+// Additionally, test() is called before the first next(), resulting in needing some way to identify the first iteration a priori. 
 
-#define Set__iterator__start(set) Map__iterator__start(set)
-#define Set__iterator__test(it, set) Map__iterator__test(it, set)
-#define Set__iterator__next(it, set) Map__iterator__next(it, set)
+typedef struct
+{
+    uint32_t index;
+    pointer_t value;
+} Iterator(Set);
+
+bool Set__iterator__test(Iterator(Set)* it, Set set);
+
+#define Set__iterator__start(set) { 0, NULL }
+#define Set__iterator__next(it, set) (it)->index++
 
 
-// Public Instance Methods - these all borrow the map
-// These are variants on the HashMap variants
+// Public Instance Methods - these all borrow the set
 
-#define set_put(set, key) map_put(set, key, NULL)
-#define set_contains(set, key) map_contains_key(set, key)
-#define set_clear(set) map_clear(set)
+// Puts an value into the set. Returns true if the value was already in the set
+bool set_put(Set set, pointer_t value);
+
+// Checks if a value is present in the set.
+bool set_contains(Set set, pointer_t value);
+
+// Clears the set
+void set_clear(Set set);
 
 #endif

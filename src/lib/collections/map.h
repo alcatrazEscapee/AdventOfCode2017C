@@ -35,8 +35,8 @@ String Map__format(Map map);
 typedef struct
 {
     uint32_t index;
-    void* key;
-    void* value;
+    pointer_t key;
+    pointer_t value;
 } Iterator(Map);
 
 bool Map__iterator__test(Iterator(Map)* it, Map map);
