@@ -1,12 +1,39 @@
 
 #include "lib.h"
 
-// Try Global Context
+// Panics
 
-bool    __exception_active = false;
-jmp_buf __exception_jmp_buf;
-String  __exception_try_value = NULL;
-String  __exception_value = NULL;
+bool    __panic_recovery_active = false;
+jmp_buf __panic_recovery_context;
+
+void __panic(slice_t panic_string, const char * func_string, slice_t extra_panic_string, slice_t format_string, ...)
+{
+    println("\n" FORMAT_BOLD FORMAT_RED "Program Panicked!" FORMAT_RESET); // Header for all panics
+    if (extra_panic_string != NULL)
+    {
+        println(extra_panic_string); // Extra error, if using panic_if or panic_if_null
+    }
+
+    va_list arg;
+    va_start(arg, format_string);
+    vprintf(format_string, arg); // Print the panic-supplied error
+    va_end(arg);
+
+    printf("\n"); // Newline, as the previous needs to use varadic printf, not println
+    println(panic_string, func_string); // Trace + function. Format string is required to contain one '%s' for the function name as that cannot be macro expanded to a literal
+
+    // Actually execute the panic
+    if (__panic_recovery_active)
+    {
+        // Recovery is possible. Jump directly to recovery location
+        longjmp(__panic_recovery_context, 1);
+    }
+    else
+    {
+        // Abort!
+        exit(1);
+    }
+}
 
 // Implementations of Primitive Box Classes
 

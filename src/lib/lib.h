@@ -89,6 +89,21 @@
 
 #define NIL_QUERY ()
 
+// Text formatting for print statements
+
+#define FORMAT_RESET   "\x1B[0m"
+#define FORMAT_BOLD    "\x1B[1m"
+
+#define FORMAT_UNBOLD  "\x1B[21m"
+
+#define FORMAT_RED     "\x1B[31m"
+#define FORMAT_GREEN   "\x1B[32m"
+#define FORMAT_YELLOW  "\x1B[33m"
+#define FORMAT_BLUE    "\x1B[34m"
+#define FORMAT_MAGENTA "\x1B[35m"
+#define FORMAT_CYAN    "\x1B[36m"
+#define FORMAT_WHITE   "\x1B[37m"
+
 // Standard Library Headers
 
 #include <stdio.h> // printf, etc.
@@ -405,80 +420,51 @@ declare_class(Void);
 // Additionally, they make use of the C setjmp / longjmp statements for a single, global error handling context
 // This is used by unit testing, in order to run sandboxed test code that may panic, and recover from it rather than exiting
 
-#define panic(format_string, args...) do { \
-    PANIC_INTERNAL("  at: panic(" LITERAL(JOIN(format_string, ## args)) ")", format_string, ## args); \
-} while (0)
+#define panic(format_string, args...) __panic( \
+    "  at: " FORMAT_BOLD FORMAT_CYAN "panic" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":" LITERAL(__LINE__) FORMAT_RESET "\n" \
+    "  at: " FORMAT_BOLD FORMAT_CYAN "%s" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":?" FORMAT_RESET , \
+    __func__, \
+    NULL, \
+    format_string, ## args)
 
 #define panic_if(condition, format_string, args...) do { \
     if (condition) { \
-        PANIC_INTERNAL("  at: panic_if(" LITERAL(JOIN(condition, format_string, ## args)) ")", format_string, ## args ); \
+        __panic( \
+            "  at " FORMAT_BOLD FORMAT_CYAN "panic_if" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":" LITERAL(__LINE__) FORMAT_RESET "\n" \
+            "  at " FORMAT_BOLD FORMAT_CYAN "%s" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":?" FORMAT_RESET , \
+            __func__, \
+            "Condition " LITERAL(condition) " is false!", \
+            format_string, ## args); \
     } \
-} while (0)
+} while(0)
 
 #define panic_if_null(pointer, format_string, args...) do { \
-    if (pointer == NULL) { \
-        PANIC_INTERNAL("  at: panic_if_null(" LITERAL(JOIN(pointer, format_string, ## args)) ")", format_string, ## args ); \
+    if ((pointer) == NULL) { \
+        __panic( \
+            " at " FORMAT_BOLD FORMAT_CYAN "panic_if_null" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":" LITERAL(__LINE__) FORMAT_RESET "\n" \
+            " at " FORMAT_BOLD FORMAT_CYAN "%s" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":?" FORMAT_RESET , \
+            __func__, \
+            "Pointer " LITERAL(pointer) " is NULL!", \
+            format_string, ## args); \
     } \
 } while (0)
 
-// The macro that actually executes a panic
-// First, create and store the exception text
-// If we're in an exception handling context, use longjmp to return back to the catch {} block.
-// Otherwise, forcefully exit after printing the exception text
-#define PANIC_INTERNAL(literal_string, format_string, args...) \
-do { \
-    String __exception_error = str_format(format_string, ## args); \
-    slice_t __exception_try_slice = __exception_active ? __exception_try_value->slice : ""; \
-    __exception_value = str_format("%s\n%s (" __FILE__ ":%d)\n  at: %s(...) (" __FILE__ ":?)\n%s",  __exception_error->slice, literal_string, __LINE__, __func__, __exception_try_slice); \
-    del(String, __exception_error); \
-    if (__exception_active) { \
-        longjmp(__exception_jmp_buf, 1); \
-    } else { \
-        printf("Program Paniced!\n%s", __exception_value->slice); \
-        del(String, move(__exception_value)); \
-        del(String, move(__exception_try_value)); \
-        exit(1); \
-    } \
-} while (0)
 
-// Try Handling
-// Usage:
-// try
-// {
-//     // code that WILL NOT invoke try, but MAY invoke a panic() variant
-//     // IF return; is invoked, all possible code that may panic MUST be prefixed with a finally; statement:
-//     int32_t x = complex_result();
-//     finally;
-//     return x;
-// }
-// catch
-// {
-//     // will be executed ONLY if the try block paniced
-// }
-// finally;
+// Internal function, like exit(), which tries to invoke a panic
+// If the global recovery context is set, uses longjmp to return to there
+void __panic(slice_t panic_string, const char * func_string, slice_t extra_panic_string, slice_t format_string, ...);
 
-extern bool    __exception_active;
-extern jmp_buf __exception_jmp_buf;
-extern String  __exception_try_value;
-extern String  __exception_value;
-
-#define exception copy(String, __exception_value)
+// Panic Recovery Global Context
+extern bool    __panic_recovery_active;
+extern jmp_buf __panic_recovery_context;
 
 #define try do {\
-    if (__exception_active) \
-    { \
-        panic("Nested try/catch not supported!"); \
-    } \
-    __exception_active = true; \
-    __exception_try_value = str_format("  at: try (" __FILE__ ":%d)\n", __LINE__); \
-} while (0); \
-if (!setjmp(__exception_jmp_buf))
-
-#define catch else
-#define finally do { \
-    __exception_active = false; \
-    del(String, move(__exception_try_value)); \
-    del(String, move(__exception_value)); \
+    __panic_recovery_active = true; \
+    if (!setjmp(__panic_recovery_context))
+#define catch \
+    else
+#define finally \
+    __panic_recovery_active = false; \
 } while (0)
 
 
@@ -542,6 +528,7 @@ void* __move(void** ref_ptr);
 
 #include "collections/arraylist.h"
 #include "collections/map.h"
+#include "collections/result.h"
 #include "collections/set.h"
 
 #endif

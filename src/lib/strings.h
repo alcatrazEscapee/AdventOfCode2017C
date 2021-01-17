@@ -41,13 +41,6 @@ typedef struct
 
 bool StringSplit__iterator__test(Iterator(StringSplit)* it, String string, slice_t delim);
 
-// String-Adjacent Methods
-
-void println(slice_t format_string, ...); // printf, but with a '\n' appended to the output
-
-void str_print(String string); // Destructive printing of a string. For non-destructive behavior, write printf("%s", string->slice);
-void str_println(String string); // Destructive printing of a string. For non-destructive behavor, write println("%s\n", string->slice);
-
 // Static Methods
 
 String str_format(slice_t format_string, ...); // Formats using printf-style formatting to an output string

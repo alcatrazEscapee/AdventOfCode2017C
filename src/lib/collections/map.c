@@ -4,6 +4,7 @@
 
 // Private Methods
 
+static Result(pointer_t) map_get_internal(Map map, pointer_t key);
 static void map_rehash(Map map);
 
 
@@ -128,28 +129,12 @@ bool map_put(Map map, pointer_t key, pointer_t value)
 
 bool map_contains_key(Map map, pointer_t key)
 {
-    return map_get(map, key) != NULL;
+    return is_ok(map_get_internal(map, key));
 }
 
 pointer_t map_get(Map map, pointer_t key)
 {
-    panic_if_null(key, "Null Pointer: Map key must not be null.");
-
-    uint32_t mask = (map->size - 1);
-    uint32_t index = hash_c(map->key_class, key) & mask;
-    pointer_t current_key = map->keys[index];
-    
-    while (current_key != NULL) // The map must always have at least one empty spot - so this is gaurentee'd to terminate
-    {
-        // Test current key
-        if (equals_c(map->key_class, current_key, key))
-        {
-            return map->values[index]; // Key match
-        }
-        index = (index + 1) & mask;
-        current_key = map->keys[index];
-    }
-    return NULL; // No match
+    return unwrap_default(map_get_internal(map, key));
 }
 
 void map_clear(Map map)
@@ -168,6 +153,29 @@ void map_clear(Map map)
 
 
 // Private Methods
+
+// Get, but returns the value as a result
+// Allows NULL values, but identifies if the key was present in the map or not.
+static Result(pointer_t) map_get_internal(Map map, pointer_t key)
+{
+    panic_if_null(key, "Null Pointer: Map key must not be null.");
+
+    uint32_t mask = (map->size - 1);
+    uint32_t index = hash_c(map->key_class, key) & mask;
+    pointer_t current_key = map->keys[index];
+    
+    while (current_key != NULL) // The map must always have at least one empty spot - so this is gaurentee'd to terminate
+    {
+        // Test current key
+        if (equals_c(map->key_class, current_key, key))
+        {
+            return Ok(pointer_t, map->values[index]); // Key match
+        }
+        index = (index + 1) & mask;
+        current_key = map->keys[index];
+    }
+    return Err(pointer_t); // No match
+}
 
 static void map_rehash(Map map)
 {

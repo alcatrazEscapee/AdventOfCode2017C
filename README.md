@@ -248,15 +248,16 @@ void T__iterator__next(Iterator(T)* it, args...);
 These are composed in (roughly) the following manner via the expansion of the `iter` macro:
 
 ```cpp
-for (Iterator(T) it = T__iterator__start(...); T__iterator__test(...); T__iterator__next(...))
+for (Iterator(T) it = T__iterator__start(...); T__iterator__test(&it, ...); T__iterator__next(&it, ...))
 ```
 
-## Panics
+## Error Handling
 
-Panics, and exception handling, are the primary methods to write error handling code. This operates on a few principles:
+The style of error handling and recovery is based on principles from Rust more so than C style (return codes from functions). As such, there are three main mechanisms for error reporting and handling:
 
-- Panics (The name and idea borrowed from Rust's `panic!()` macro), are invoked typically in *unrecoverable* situations. These are errors such as Out of Memory or Index Out of Bounds. The implementation of `panic`, `panic_if`, and `panic_if_null` are designed to be as clear as possible about where the error occurred (including debugging information such as the current file and line number, and function), and the reason for failure. They are designed to support what should be program level assertions.
-- `try` / `catch` statements are very specialized versions of their usage in languages such as Java. They can catch a single `panic()`, they cannot be nested, and they WILL LIKELY result in memory leaks due to a lack of cleanup from where the panic was invoked. They are designed to help debug situations where errors have already occurred, such as in the unit test framework.
+- Panics (The name and idea borrowed from Rust's `panic!()` macro), are invoked in *unrecoverable* situations. These are errors such as Out of Memory or Index Out of Bounds. The implementation of `panic`, `panic_if`, and `panic_if_null` are designed to be as clear as possible about where the error occurred (including debugging information such as the current file and line number, and function), and the reason for failure. They are designed to support what should be program level assertions.
+- For situations where expectable errors may occur, and need to be communicated back to the caller, the `Result<T>` type should be used. This is a simple struct which can either store an `Ok(Class cls, T t)` value, or `Err(Class cls)`. It is similar in implementation to Rust's `Option<T>`. It has a series of `unwrap` methods and variants to handle all primitive or class types.
+- Finally, in the rare case that it would be advisable to prevent a `panic()` invocation from exiting the program (for example, in the unit test framework, when tests are ideally ran in isolation from each other), `try` / `catch` blocks can be used to recover from a `panic()`. They have several limitations, and due to the lack of cleanup / stack backtracking, they can very easily lead to memory leaks. If a panic occurs, it is an error state in the program, `try` and `catch` simply provide a recovery and continuation mechanism.
 
 Panic macros come in three flavors:
 
@@ -264,40 +265,32 @@ Panic macros come in three flavors:
 // Unconditional panic. Arguments are as to printf
 void panic(slice_t format_string, ...);
 
-// Conditional panic. Arguments are as to printf. Use preferrentially over if (x) panic() as stringification is used to debug the actual condition
+// Conditional panic. Arguments are as to printf. Use preferrentially over if (x) { panic() }
 void panic_if(bool condition, slice_t format_string, ...);
 
-// Conditional panic. Arguments are as to printf. Use preferrentially over if (x != NULL) panic() for the above reason.
+// Conditional panic. Arguments are as to printf. Use preferrentially over if (x != NULL) panic()
 void panic_if_null(T left, T right, slice_t format_string, ...);
 ```
 
-Panics are implemented entirely through macros. When they are invoked, they will either (depending if the global context for `try` / `catch` handling is set), invoke `longjmp`, or `exit(1)`, only after building a detailed report of the error, and if exiting, printing the error.
+Panics internally invoke the `__panic()` function, supplying a series of context strings, allowing for a detailed trace to be printed to the console. When they are invoked, they will either (depending if the global context for `try` / `catch` handling is set), invoke `longjmp`, or `exit(1)` to return to the `catch` block, or terminate execution of the program.
 
-Try / Catch statements are a very primitive implementation of panic recovery. They have many limitations:
+Try / Catch statements are a very primitive implementation of panic recovery. They use a global context to record the current try context.
 
-- They cannot be nested. if `try` is reached within another `try` block, it itself will invoke `panic()`.
 - Due to a lack of cleanup abilities (such as pointers dropping out of scope and being cleaned up) that are present in Rust or C++, this very often will lead to memory leaks if a panic is invoked.
-- A `try` block cannot be returned from within, as it will leak important memory local to the `try` block.
-- There is no notion of catching specific exceptions, or handling them outside of the error text.
+- A `try` block cannot be returned from within, as this will leak the try context.
+- In the event the `catch` block is reached, there is no introspection of the specific panic that was hit. The panic will always be printed to the console, and it cannot be checked at this time.
 
 That said, `try catch` statements can be used in the following manner:
 
 ```cpp
 try
 {
-    // code that WILL NOT invoke try, but MAY invoke a panic() variant
-    // IF return; is invoked, all possible code that may panic MUST be prefixed with a finally; statement:
-    int32_t x = complex_result();
-    finally;
-    return x;
+    // code that may invoke panic()
+    // if it does, the rest of the try block will be skipped and execution will transfer to the catch block
 }
 catch
 {
     // will be executed ONLY if the try block paniced
-    // To obtain the panic error, the statement 'exception' can be used, which will return a new instance of a String detailing the error info to the caller
-    // Example:
-    String err = exception;
-    str_println(err);
 }
 finally;
 ```

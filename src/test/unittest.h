@@ -15,10 +15,8 @@ void name(); \
 void name(); \
 void name() \
 { \
-    printf("Group: " LITERAL(name) "\n"); \
     body \
     ; \
-    printf("\n"); \
 }
 
 #define TEST_MAIN(body...) \
@@ -39,78 +37,85 @@ static void name() \
 { \
     bool __passed = true; \
     bool __paniced = false; \
-    try \
+    jmp_buf __fail_ctx; \
+    if (!setjmp(__fail_ctx)) \
     { \
-    body \
-    ; \
-    } \
-    catch \
-    { \
-        String __ex = exception; \
-        printf("\tPaniced: " LITERAL(name) "\nCaught Exception:\n%s", __ex->slice); \
-        __paniced = true; \
-        __failed_tests++; \
-        del(String, __ex); \
-    } \
-    finally; \
-    if (!__paniced) \
-    { \
-        if (__passed) \
+        try \
         { \
-            printf("\tPassed: " LITERAL(name) "\n"); \
-            __passed_tests++; \
+            body \
+            ; \
         } \
-        else \
+        catch \
         { \
-            printf("\tFailed: " LITERAL(name) "\n"); \
+            __paniced = true; \
             __failed_tests++; \
         } \
+        finally; \
+    } \
+    else \
+    { \
+        __passed = false; \
+    } \
+    if (__paniced) \
+    { \
+        printf(FORMAT_BOLD FORMAT_RED "Panicked: " LITERAL(name) FORMAT_RESET "\n"); \
+        __failed_tests++; \
+    } \
+    else if (__passed) \
+    { \
+        printf(FORMAT_GREEN "Passed: " LITERAL(name) FORMAT_RESET "\n"); \
+        __passed_tests++; \
+    } \
+    else \
+    { \
+        printf(FORMAT_BOLD FORMAT_YELLOW "Failed: " LITERAL(name) FORMAT_RESET "\n"); \
+        __failed_tests++; \
     } \
 }
 
 #define FAIL(args...) \
 do { \
     printf(args); \
-    __passed = false; \
+    longjmp(__fail_ctx, 1); \
 } while (0)
 
-#define ASSERT_TRUE(condition, args...) \
+#define ASSERT_TRUE(condition, format_string, args...) \
 do { \
     if (!(condition)) \
     { \
         printf("Assert True Failed:\n\t" LITERAL(condition) "\n\t"); \
-        FAIL(args); \
-        printf("\n"); \
+        printf(format_string "\n", ## args); \
+        longjmp(__fail_ctx, 1); \
     } \
 } while(0)
 
-#define ASSERT_FALSE(condition, args...) \
+#define ASSERT_FALSE(condition, format_string, args...) \
 do { \
     if (condition) \
     { \
         printf("Assert False Failed:\n\t" LITERAL(condition) "\n\t"); \
-        FAIL(args); \
-        printf("\n"); \
+        printf(format_string "\n", ## args); \
+        longjmp(__fail_ctx, 1); \
     } \
 } while (0)
 
-#define ASSERT_EQUAL(left, right, args...) \
+#define ASSERT_EQUAL(left, right, format_string, args...) \
 do { \
     if ((left) != (right)) \
     { \
         printf("Assert Equal Failed.\n\t'" LITERAL(left) "' != '" LITERAL(right) "'\n\t"); \
-        FAIL(args); \
-        printf("\n"); \
+        printf(format_string "\n", ## args); \
+        longjmp(__fail_ctx, 1); \
     } \
 } while (0)
 
-#define ASSERT_NOT_EQUAL(left, right, args...) \
+#define ASSERT_NOT_EQUAL(left, right, format_string, args...) \
 do { \
     if ((left) == (right)) \
     { \
         printf("Assert Not Equal Failed.\n\t'" LITERAL(left) "' != '" LITERAL(right) "'\n\t"); \
-        FAIL(args); \
-        printf("\n"); \
+        printf(format_string "\n", ## args); \
+        longjmp(__fail_ctx, 1); \
     } \
 } while (0)
 

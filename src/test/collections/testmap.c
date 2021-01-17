@@ -26,6 +26,19 @@ TEST(test_map_put_get, {
     del(Map, map);
 });
 
+TEST(test_map_put_null, {
+    Map map = new(Map, 10, class(Int32), class(Int32));
+    Int32 key = new(Int32, 2);
+
+    map_put(map, copy(Int32, key), NULL);
+
+    ASSERT_TRUE(map_contains_key(map, key), "Map should contain key = 2");
+    ASSERT_TRUE(equals(Int32, map_get(map, key), NULL), "Expected to get val = NULL from key = 2");
+
+    del(Int32, key);
+    del(Map, map);
+});
+
 TEST(test_map_put_replace, {
     Map map = new(Map, 10, class(Int32), class(Int32));
     Int32 key = new(Int32, 2);
@@ -52,7 +65,7 @@ TEST(test_map_format, {
     map_put(map, new(Int32, 0), new(Int32, 1234));
     map_put(map, new(Int32, 1), new(Int32, 4321));
 
-    // Technically this is unordered, but since we know Int32's hash function for positive integers it itself, we can consider this a test
+    // Technically this is unordered, but since we know Int32's hash function for positive integers is itself, we can consider this a test
     String s2 = format(Map, map);
     ASSERT_TRUE(str_equals_content(s2, "Map<Int32, Int32>{0: 1234, 1: 4321}"), "Actual: '%s'", s2->slice);
     del(String, s2);
@@ -88,6 +101,7 @@ TEST(test_map_stress, {
 TEST_GROUP(test_map, {
     test_map_new();
     test_map_put_get();
+    test_map_put_null();
     test_map_put_replace();
     test_map_format();
 

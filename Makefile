@@ -9,7 +9,7 @@ LIB_DIR      := src/lib
 TEST_DIR     := src/test
 
 # Compile commands
-GCC_DEBUG    := gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable
+GCC_DEBUG    := gcc -std=c11 -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-variable
 GCC_EXPAND   := gcc -std=c11 -E -P
 GCC_RELEASE  := gcc -std=c11 -O3
 VALGRIND     := valgrind --tool=memcheck --leak-check=full
