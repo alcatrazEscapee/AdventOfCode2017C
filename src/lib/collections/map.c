@@ -13,8 +13,8 @@ Map Map__new(uint32_t initial_size, Class key_class, Class value_class)
     initial_size = next_highest_power_of_two(initial_size);
     Map map = class_malloc(Map);
 
-    map->keys = safe_malloc(Map, sizeof(pointer_t) * initial_size);
-    map->values = safe_malloc(Map, sizeof(pointer_t) * initial_size);
+    map->keys = safe_malloc(sizeof(pointer_t) * initial_size);
+    map->values = safe_malloc(sizeof(pointer_t) * initial_size);
     map->key_class = key_class;
     map->value_class = value_class;
     map->size = initial_size;
@@ -186,8 +186,8 @@ static void map_rehash(Map map)
     uint32_t new_size = old_size << 1;
 
     // Reallocate the new arrays
-    map->keys = safe_malloc(Map, sizeof(pointer_t) * new_size);
-    map->values = safe_malloc(Map, sizeof(pointer_t) * new_size);
+    map->keys = safe_malloc(sizeof(pointer_t) * new_size);
+    map->values = safe_malloc(sizeof(pointer_t) * new_size);
 
     for (uint32_t i = 0; i < new_size; i++)
     {

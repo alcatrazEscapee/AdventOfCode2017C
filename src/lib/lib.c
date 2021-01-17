@@ -193,18 +193,22 @@ String __format(pointer_t instance, FnFormat f)
 }
 
 // Safe allocation
-pointer_t __malloc(slice_t name, uint32_t size)
+pointer_t __malloc(uint64_t size, StackFrame frame)
 {
+    __stack_frame_push(frame);
     pointer_t ptr = malloc(size);
-    panic_if_null(ptr, "Out of Memory: Cannot allocate %d bytes for %s", size, name);
+    panic_if_null(ptr, "Out of Memory: Cannot allocate %lu bytes", size);
+    __stack_frame_pop();
     return ptr;
 }
 
-void __realloc(slice_t name, pointer_t* ref_ptr, uint32_t size)
+void __realloc(pointer_t* ref_ptr, uint64_t size, StackFrame frame)
 {
+    __stack_frame_push(frame);
     pointer_t realloc_ptr = realloc(*ref_ptr, size);
-    panic_if_null(realloc_ptr, "Out of Memory: Cannot allocate %d bytes for %s", size, name);
+    panic_if_null(realloc_ptr, "Out of Memory: Cannot allocate %lu bytes.", size);
     *ref_ptr = realloc_ptr;
+    __stack_frame_pop();
 }
 
 // Move Semantics

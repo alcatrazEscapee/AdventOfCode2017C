@@ -28,7 +28,7 @@ PrimitiveArrayList_t CONCAT3(ArrayList_, type, __new)(uint32_t initial_size)
 
     PrimitiveArrayList_t list = class_malloc(PrimitiveArrayList_t);
 
-    list->values = safe_malloc(PrimitiveArrayList_t, sizeof(type) * initial_size);
+    list->values = safe_malloc(sizeof(type) * initial_size);
     list->size = initial_size;
     list->length = 0;
 
@@ -134,7 +134,7 @@ void CONCAT3(al_, type, _append)(PrimitiveArrayList_t list, type value)
         // Resize the array
         uint32_t old_size = list->size;
         uint32_t new_size = old_size * 2;
-        type* new_array = safe_malloc(PrimitiveArrayList_t, sizeof(type) * new_size);
+        type* new_array = safe_malloc(sizeof(type) * new_size);
 
         memcpy(new_array, list->values, sizeof(type) * old_size);
         free(list->values);

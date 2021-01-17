@@ -365,7 +365,7 @@ declare_constructor(cls, type value)
 
 #define impl_primitive_class(cls, type) \
 impl_class(cls); \
-cls cls ## __new(type value) { cls box = safe_malloc(cls, sizeof(type)); *box = value; return box; } \
+cls cls ## __new(type value) { cls box = safe_malloc(sizeof(type)); *box = value; return box; } \
 void cls ## __del(cls instance) { free(instance); } \
 cls cls ## __copy(cls instance) { return new(cls, *(instance)); } \
 bool cls ## __equals(cls left, cls right) { return equals(type, *left, *right); } \
@@ -497,15 +497,15 @@ void __stack_frame_pop();
 // Misc. Features
 
 // Standard Memory Allocations
-#define class_malloc(cls) __malloc("Class<" LITERAL(cls) ">", sizeof(struct CONCAT(cls, __struct)))
-#define safe_malloc(cls, size) __malloc(LITERAL(cls), size)
-#define safe_realloc(cls, ptr, size) __realloc(LITERAL(cls), (pointer_t*) (& (ptr)), size)
+#define class_malloc(cls) __malloc(sizeof(struct CONCAT(cls, __struct)), __create_stack_frame)
+#define safe_malloc(size) __malloc(size, __create_stack_frame)
+#define safe_realloc(ptr, size) __realloc((pointer_t*) (& (ptr)), size, __create_stack_frame)
 
 // Calls malloc() guarded with an panic. Return value is gaurenteed to be non null
-pointer_t __malloc(slice_t name, uint32_t size);
+pointer_t __malloc(uint64_t size, StackFrame frame);
 
 // Calls realloc() guarded with a panic. ref_ptr is gaurenteed to be non null on return.
-void __realloc(slice_t name, pointer_t* ref_ptr, uint32_t size);
+void __realloc(pointer_t* ref_ptr, uint64_t size, StackFrame frame);
 
 // Rust 'loop' keyword
 #define loop while (true)

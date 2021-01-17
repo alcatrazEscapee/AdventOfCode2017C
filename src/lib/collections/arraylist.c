@@ -30,7 +30,7 @@ ArrayList ArrayList__new(uint32_t initial_size, Class value_class)
 {
     ArrayList list = class_malloc(ArrayList);
     
-    list->values = safe_malloc(ArrayList, sizeof(pointer_t) * initial_size);
+    list->values = safe_malloc(sizeof(pointer_t) * initial_size);
     list->value_class = value_class;
     list->size = initial_size;
     list->length = 0;
@@ -146,7 +146,7 @@ void al_pointer_t_append(ArrayList list, pointer_t value)
         // Resize the array
         uint32_t old_size = list->size;
         uint32_t new_size = old_size * 2;
-        pointer_t* new_array = safe_malloc(ArrayList, sizeof(pointer_t) * new_size);
+        pointer_t* new_array = safe_malloc(sizeof(pointer_t) * new_size);
 
         memcpy(new_array, list->values, sizeof(pointer_t) * old_size);
         free(list->values);

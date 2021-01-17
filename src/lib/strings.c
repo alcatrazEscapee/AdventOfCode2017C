@@ -39,7 +39,7 @@ String str_create_with_length(uint32_t initial_length)
     uint32_t initial_size = initial_length + 1; // Plus one for the null terminator
     String string = class_malloc(String);
 
-    string->slice = safe_malloc(String, sizeof(char) * initial_size);
+    string->slice = safe_malloc(sizeof(char) * initial_size);
     string->size = initial_size;
     string->length = 0;
 
@@ -64,7 +64,7 @@ String String__new(slice_t initial_value)
     uint32_t initial_size = initial_length + 1; // Plus one for the null terminator
     String string = class_malloc(String);
 
-    string->slice = safe_malloc(String, sizeof(char) * initial_size);
+    string->slice = safe_malloc(sizeof(char) * initial_size);
     string->size = initial_length + 1;
     string->length = initial_length;
 
@@ -436,7 +436,7 @@ static void str_ensure_length(String string, uint32_t required_length)
     {
         // Resize the string
         string->size = required_size * 2; // Update the size of the string
-        safe_realloc(slice_t, string->slice, sizeof(char) * string->size); // Reallocate the slice
+        safe_realloc(string->slice, sizeof(char) * string->size); // Reallocate the slice
 
         // Initialize the rest of the new slice with nulls
         for (uint32_t i = string->length; i < string->size; i++)
