@@ -44,27 +44,27 @@ void Map__del(Map map)
 String Map__format(Map map)
 {
     String s = new(String, "Map<");
-    str_append_slice(s, map->key_class->name);
-    str_append_slice(s, ", ");
-    str_append_slice(s, map->value_class->name);
-    str_append_slice(s, ">{");
+    str_append(s, map->key_class->name);
+    str_append(s, ", ");
+    str_append(s, map->value_class->name);
+    str_append(s, ">{");
     if (map->length == 0)
     {
-        str_append_char(s, '}');
+        str_append(s, "}");
         return s;
     }
     else
     {
         for iter(Map, it, map)
         {
-            str_append_string(s, format_c(map->key_class, it.key));
-            str_append_slice(s, ": ");
-            str_append_string(s, format_c(map->value_class, it.value));
-            str_append_slice(s, ", ");
+            str_append(s, format_c(map->key_class, it.key));
+            str_append(s, ": ");
+            str_append(s, format_c(map->value_class, it.value));
+            str_append(s, ", ");
         }
     }
     str_pop(s, 2); // Pop the last ', '
-    str_append_char(s, '}');
+    str_append(s, "}");
     return s;
 }
 

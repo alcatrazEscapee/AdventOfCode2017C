@@ -97,12 +97,10 @@ struct ArrayList__struct
 
 typedef struct ArrayList__struct * ArrayList;
 
-// Constructor / Destructor
-ArrayList ArrayList__new(uint32_t initial_size, Class value_class);
-void ArrayList__del(ArrayList list);
-ArrayList ArrayList__copy(ArrayList list);
+// Class
 
-String ArrayList__format(ArrayList list);
+declare_class(ArrayList);
+declare_constructor(ArrayList, uint32_t initial_size, Class value_class);
 
 // Iterator
 

@@ -69,13 +69,13 @@ uint32_t CONCAT(TUPLE_CLASS, __hash)(TUPLE_CLASS tuple)
 String CONCAT(TUPLE_CLASS, __format)(TUPLE_CLASS tuple)
 {
     String string = new(String, LITERAL(TUPLE_CLASS) "<" LITERAL(IIF_LIST(TUPLE_NARGS)(TUPLE_TYPE1, TUPLE_TYPE2, TUPLE_TYPE3, TUPLE_TYPE4)) ">(");
-    str_append_string(string, format(TUPLE_TYPE1, tuple->TUPLE_VALUE1));
-    str_append_slice(string, ", ");
-    IIF_EMPTY(TUPLE_ARG2, str_append_string(string, format(TUPLE_TYPE2, tuple->TUPLE_VALUE2)); str_append_slice(string, ", ");)
-    IIF_EMPTY(TUPLE_ARG3, str_append_string(string, format(TUPLE_TYPE3, tuple->TUPLE_VALUE3)); str_append_slice(string, ", ");)
-    IIF_EMPTY(TUPLE_ARG4, str_append_string(string, format(TUPLE_TYPE4, tuple->TUPLE_VALUE4)); str_append_slice(string, ", ");)
+    str_append(string, format(TUPLE_TYPE1, tuple->TUPLE_VALUE1));
+    str_append(string, ", ");
+    IIF_EMPTY(TUPLE_ARG2, str_append(string, format(TUPLE_TYPE2, tuple->TUPLE_VALUE2)); str_append(string, ", ");)
+    IIF_EMPTY(TUPLE_ARG3, str_append(string, format(TUPLE_TYPE3, tuple->TUPLE_VALUE3)); str_append(string, ", ");)
+    IIF_EMPTY(TUPLE_ARG4, str_append(string, format(TUPLE_TYPE4, tuple->TUPLE_VALUE4)); str_append(string, ", ");)
     str_pop(string, 2);
-    str_append_char(string, ')');
+    str_append(string, ")");
     return string;
 }
 

@@ -62,20 +62,62 @@ String ArrayList__format(ArrayList list)
     String s = new(String, "ArrayList{");
     if (list->length == 0)
     {
-        str_append_char(s, '}');
+        str_append(s, '}');
         return s;
     }
     else
     {
         for iter(ArrayList, it, list)
         {
-            str_append_string(s, format_c(list->value_class, it.value));
-            str_append_slice(s, ", ");
+            str_append(s, format_c(list->value_class, it.value));
+            str_append(s, ", ");
         }
     }
     str_pop(s, 2); // Pop the last ', '
-    str_append_char(s, '}');
+    str_append(s, '}');
     return s;
+}
+
+bool ArrayList__equals(ArrayList left, ArrayList right)
+{
+    if (!equals(Class, left->value_class, right->value_class) || left->length != right->length)
+    {
+        return false;
+    }
+    for (uint32_t i = 0; i < left->length; i++)
+    {
+        if (equals_c(left->value_class, left->values[i], right->values[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+uint32_t ArrayList__hash(ArrayList instance)
+{
+    uint32_t h = 0;
+    for iter(ArrayList, it, instance)
+    {
+        h = (31 * h + hash_c(instance->value_class, it.value));
+    }
+    return h;
+}
+
+int32_t ArrayList__compare(ArrayList left, ArrayList right)
+{
+    panic_if(!equals(Class, left->value_class, right->value_class), "compare(ArrayList<%s>, ArrayList<%s>) parameters have different generic types!", left->value_class->name, right->value_class->name);
+    uint32_t min_length = min(left->length, right->length);
+    for (uint32_t i = 0; i < min_length; i++)
+    {
+        int32_t result = compare_c(left->value_class, left->values[i], right->values[i]);
+        if (result != 0)
+        {
+            return result;
+        }
+    }
+    // Compare the lengths of each list
+    return compare(uint32_t, left->length, right->length);
 }
 
 // Instance Methods

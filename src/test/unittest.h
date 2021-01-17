@@ -48,7 +48,6 @@ static void name() \
         catch \
         { \
             __paniced = true; \
-            __failed_tests++; \
         } \
         finally; \
     } \

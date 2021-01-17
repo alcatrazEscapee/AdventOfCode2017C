@@ -51,8 +51,8 @@ run: out/release/day$(day).o
 	fi
 
 .PHONY: all
-all: $(RELEASE_DAYS)
-	-@for day in $(RELEASE_DAYS) ; do \
+all: $(DAYS_RELEASE)
+	-@for day in $(DAYS_RELEASE) ; do \
         $$day ; \
     done
 
