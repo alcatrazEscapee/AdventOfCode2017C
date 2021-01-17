@@ -68,15 +68,15 @@ T T__new(args...);
 
 Constructors make heavy use of standard `lib.h` methods for memory allocations:
 
-```c
+```cpp
 // Allocates memory for a Class. Panics if it cannot allocate memory 
-pointer_T class_malloc(Class cls);
+pointer_t class_malloc(Class cls);
 
 // Allocates memory for a named, sized amount. Used for sub-elements such as the slice_t of a String. Panics if it cannot allocate memory.
-pointer_t safe_malloc(Name name, uint32_t size);
+pointer_t safe_malloc(uint32_t size);
 
 // Guarded call to realloc() which reallocates ptr up to new_size. Panics if it cannot allocate memory.
-void safe_realloc(Name name, pointer_t ptr, uint32_t new_size);
+void safe_realloc(pointer_t ptr, uint32_t new_size);
 ```
 
 Some classes may also support a `copy` constructor, which returns an new instance that is equal to the provided one. It's signature is:
@@ -259,6 +259,19 @@ The style of error handling and recovery is based on principles from Rust more s
 - For situations where expectable errors may occur, and need to be communicated back to the caller, the `Result<T>` type should be used. This is a simple struct which can either store an `Ok(Class cls, T t)` value, or `Err(Class cls)`. It is similar in implementation to Rust's `Option<T>`. It has a series of `unwrap` methods and variants to handle all primitive or class types.
 - Finally, in the rare case that it would be advisable to prevent a `panic()` invocation from exiting the program (for example, in the unit test framework, when tests are ideally ran in isolation from each other), `try` / `catch` blocks can be used to recover from a `panic()`. They have several limitations, and due to the lack of cleanup / stack backtracking, they can very easily lead to memory leaks. If a panic occurs, it is an error state in the program, `try` and `catch` simply provide a recovery and continuation mechanism.
 
+In order to provide detailed trace-back information in the case of a panic, a primitive, finite exception stack trace mechanism is used. This uses a global call stack, which is appended to with static information (such as `__FILE__`, `__LINE__`, and `__func__`) at specific call sites. When a panic is invoked, the stack is popped to print the entire context available.
+
+In order to declare a function which records a stack frame, it must take a `StackFrame` parameter. Callers should supply `__create_stack_frame` as an argument (this is typically implemented with macro redirects to a function, for example, `__malloc` or `Result<T>`s `unwrap` function). Inside the function, it should call both `__stack_frame_push` and `__stack_frame_pop`:
+
+```cpp
+void function_with_stack_frame(..., StackFrame frame)
+{
+    __stack_frame_push(frame);
+    ...
+    __stack_frame_pop();
+}
+```
+
 Panic macros come in three flavors:
 
 ```c
@@ -313,7 +326,34 @@ A hash based key-value pair map. It stores values densely in two backing arrays,
 
 ### Set
 
-This is a hash based set, with `O(1)` contains checks. It is implemented as a `Map<T, Void>`. (As such, it is slightly wasteful with memory due to allocating a large array of `pointer_t`s that is only ever filled with `NULL`). It may be replaced with a dedicated hash set implementation at some time in the future.
+This is a hash based set, with `O(1)` contains checks. It is a simplified implementation of the `Map` class, having no unnecessary values array or the `Void` class.
+
+### Result
+
+Result is a cross between an `Optional<T>` and Rust's `Result<T, E>` type. It is implemented for `pointer_t`, and all primitive types. It has various `unwrap` based methods that allow querying of the result's state, and either panicking or defaulting in error states. A `Result` is typed with `Result(T)`, where `T` is the type of the underlying value. A result can be created either with `Ok(T, value)` or `Err(T)`.
+
+It is used, for example, as the return type for the `str_parse()` method:
+
+```cpp
+// Parses a primitive type from the front of a string.
+Result(T) str_parse(Class T, String string);
+```
+
+Which can then be used to indicate errors in parsing:
+
+```cpp
+Result(int32_t) int_result = str_parse(int32_t, "123"); // This will return Ok(int32_t, 123)
+
+unwrap(int_result); // Returns 123
+is_ok(int_result); // Returns true
+is_err(int_result); // Returns false
+
+Result(int32_t) int_result = str_parse(int32_t, "not an int"); // This will return Err(int32_t)
+
+unwrap(int_result); // This will panic
+unwrap_or(int_result, 123); // Returns 123
+unwrap_default(int_result); // Returns default_value(int32_t), aka 0
+```
 
 ### Tuples
 
