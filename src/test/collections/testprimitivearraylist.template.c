@@ -11,7 +11,7 @@ TEST(CONCAT3(test_, type, _list_new), {
     PrimitiveArrayList(type) list = new(PrimitiveArrayList(type), 10);
 
     del(PrimitiveArrayList(type), list);
-})
+});
 
 TEST(CONCAT3(test_, type, _list_format), {
     PrimitiveArrayList(type) list = new(PrimitiveArrayList(type), 10);

@@ -5,86 +5,58 @@
 #ifndef UNITTEST_H
 #define UNITTEST_H
 
-extern uint32_t __failed_tests;
-extern uint32_t __passed_tests;
+// Test Function
+// Return value indicates passing
+typedef bool (*FnTestInternal) ();
 
-#define TEST_INCLUDE(name) \
-void name(); \
+// Test Invocation function
+// Test methods are passed to this, then ran and output recorded
+void __test_invoke(slice_t test_name, FnTestInternal test_internal);
 
+// Defines a group of test methods.
+// Useful for template-based grouping of similar tests
 #define TEST_GROUP(name, body...) \
 void name(); \
 void name() \
 { \
     body \
     ; \
-}
+} \
+GLOBAL_NOOP
 
-#define TEST_MAIN(body...) \
-uint32_t __passed_tests = 0; \
-uint32_t __failed_tests = 0; \
-int main(void) \
-{ \
-    printf("-----\nTesting Starting\n-----\n\n"); \
-    body \
-    ; \
-    printf("\n-----\nTesting Complete\n-----\n\nPassed = %d\nFailed = %d\n", __passed_tests, __failed_tests); \
-    return 0; \
-}
-
+// Defines a single test method, private to the file it is defined in
+// To call outside the file, call from a TEST_GROUP() defined in the same file
 #define TEST(name, body...) \
 static void name(); \
-static void name() \
+static bool CONCAT(__internal_, name) (); \
+\
+static void name() { __test_invoke(LITERAL(name), & CONCAT(__internal_, name)); } \
+static bool CONCAT(__internal_, name) () \
 { \
-    bool __passed = true; \
-    bool __paniced = false; \
-    jmp_buf __fail_ctx; \
-    if (!setjmp(__fail_ctx)) \
-    { \
-        try \
-        { \
-            body \
-            ; \
-        } \
-        catch \
-        { \
-            __paniced = true; \
-        } \
-        finally; \
-    } \
-    else \
-    { \
-        __passed = false; \
-    } \
-    if (__paniced) \
-    { \
-        printf(FORMAT_BOLD FORMAT_RED "Panicked: " LITERAL(name) FORMAT_RESET "\n"); \
-        __failed_tests++; \
-    } \
-    else if (__passed) \
-    { \
-        printf(FORMAT_GREEN "Passed: " LITERAL(name) FORMAT_RESET "\n"); \
-        __passed_tests++; \
-    } \
-    else \
-    { \
-        printf(FORMAT_BOLD FORMAT_YELLOW "Failed: " LITERAL(name) FORMAT_RESET "\n"); \
-        __failed_tests++; \
-    } \
-}
+    body \
+    ; \
+    return true; \
+} \
+GLOBAL_NOOP
 
+// Fails a test unconditionally
 #define FAIL(args...) \
 do { \
     printf(args); \
-    longjmp(__fail_ctx, 1); \
+    return false; \
 } while (0)
 
+// Various assertions
+// format_string and args... are as to printf()
+// As a general rule, the detail should be the actual result, not the expected one. e.g. ASSERT_EQUAL(x, 3, "Actual: %d", x);
+// The expected result is already able to be inferred through stringification.
 #define ASSERT_TRUE(condition, format_string, args...) \
 do { \
     if (!(condition)) \
     { \
         printf("Assert True Failed:\n\t" LITERAL(condition) "\n\t"); \
         printf(format_string "\n", ## args); \
-        longjmp(__fail_ctx, 1); \
+        return false; \
     } \
 } while(0)
 
@@ -94,7 +66,7 @@ do { \
     { \
         printf("Assert False Failed:\n\t" LITERAL(condition) "\n\t"); \
         printf(format_string "\n", ## args); \
-        longjmp(__fail_ctx, 1); \
+        return false; \
     } \
 } while (0)
 
@@ -104,7 +76,7 @@ do { \
     { \
         printf("Assert Equal Failed.\n\t'" LITERAL(left) "' != '" LITERAL(right) "'\n\t"); \
         printf(format_string "\n", ## args); \
-        longjmp(__fail_ctx, 1); \
+        return false; \
     } \
 } while (0)
 
@@ -114,7 +86,7 @@ do { \
     { \
         printf("Assert Not Equal Failed.\n\t'" LITERAL(left) "' != '" LITERAL(right) "'\n\t"); \
         printf(format_string "\n", ## args); \
-        longjmp(__fail_ctx, 1); \
+        return false; \
     } \
 } while (0)
 

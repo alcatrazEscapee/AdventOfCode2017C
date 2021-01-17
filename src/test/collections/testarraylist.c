@@ -37,4 +37,4 @@ TEST_GROUP(test_array_list, {
     test_int64_t_list();
     test_uint32_t_list();
     test_uint64_t_list();
-})
+});

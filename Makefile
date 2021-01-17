@@ -9,7 +9,7 @@ LIB_DIR      := src/lib
 TEST_DIR     := src/test
 
 # Compile commands
-GCC_WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-variable -Wno-discarded-qualifiers
+GCC_WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-variable -Wno-discarded-qualifiers -Wno-variadic-macros
 GCC_DEBUG    := gcc -std=c11 -g -O0 $(GCC_WARNINGS)
 GCC_EXPAND   := gcc -std=c11 -E -P
 GCC_RELEASE  := gcc -std=c11 -O3 $(GCC_WARNINGS)

@@ -126,6 +126,14 @@
 #undef bool
 typedef _Bool bool;
 
+// Some macros need to define stuff in global scope (e.g. TEST() in the unittest framework)
+// In typical macro fashion, these should require semicolons at the end
+// However, this is not allowed when compiling with -Wpedantic -Werror
+// So, we need to invent a semicolon-consuming noop, that's perfectly repeatable.
+// Turns out, forward declarations of structs satisfy this requirement.
+// Ref: <https://stackoverflow.com/questions/53923706/workaround-for-semicolon-in-global-scope-warning-for-no-op-c-macro>
+#define GLOBAL_NOOP struct __GLOBAL_NOOP_SEMICOLON_TRICK
+
 // Primitive Types:
 // char, bool, int32_t, int64_t, uint32_t, uint64_t
 
@@ -434,13 +442,13 @@ declare_class(Void);
 
 #define panic_if(condition, format_string, args...) do { \
     if (condition) { \
-        __panic("panic", __create_stack_frame, "Condition " LITERAL(condition) " is false!", format_string, ## args); \
+        __panic("panic_if", __create_stack_frame, "Condition " LITERAL(condition) " is false!", format_string, ## args); \
     } \
 } while(0)
 
 #define panic_if_null(pointer, format_string, args...) do { \
     if ((pointer) == NULL) { \
-        __panic("panic", __create_stack_frame, "Pointer " LITERAL(pointer) " is NULL!", format_string, ## args); \
+        __panic("panic_if_null", __create_stack_frame, "Pointer " LITERAL(pointer) " is NULL!", format_string, ## args); \
     } \
 } while (0)
 
@@ -512,8 +520,8 @@ void __realloc(pointer_t* ref_ptr, uint64_t size, StackFrame frame);
 
 // Move Semantics
 
-#define move(ptr) (__move((void**)(& (ptr))))
-void* __move(void** ref_ptr);
+#define move(ptr) (__move((pointer_t*)(& (ptr))))
+pointer_t __move(pointer_t* ref_ptr);
 
 
 // Iterators
