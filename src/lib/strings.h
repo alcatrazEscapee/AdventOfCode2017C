@@ -2,6 +2,7 @@
 // Unlike Rust's string natively handling unicode data, we make the (simplifying) assumptions that a character represents a single byte of 7-bit ASCII data.
 
 #include "lib.h"
+#include "collections/result.h"
 
 #ifndef STRINGS_H
 #define STRINGS_H
@@ -82,13 +83,31 @@ void str_set_char(String string, uint32_t index, char c); // Sets the char at a 
 
 bool str_equals_content(String string, slice_t static_string);
 
+// Checks if a slice of this string is equals to a static string
+// Panics if either of the indexes are out of range, or if the length of the slice is not equal to the length of the static string
+bool str_equals_slice(String string, uint32_t start_inclusive, uint32_t end_exclusive, slice_t static_string);
+
 // String Manipulations
 
+// Finds the first index of any of the characters of any_chars in string. Returns Err() if none of the characters exist
+Result(uint32_t) str_index_of(String string, slice_t any_chars);
+
 // Returns a new string which is a substring of this string
+// Panics if either of the indexes are out of range
 String str_substring(String string, uint32_t start_inclusive, uint32_t end_exclusive);
 
 // Parsing
-int32_t str_parse_int32(String string);
+
+// Parses all primitive types.
+#define str_parse(cls, string) CONCAT(str_parse_, cls) (string)
+
+Result(char) str_parse_char(String string);
+Result(bool) str_parse_bool(String string);
+Result(int32_t) str_parse_int32_t(String string);
+Result(uint32_t) str_parse_uint32_t(String string);
+Result(int64_t) str_parse_int64_t(String string);
+Result(uint64_t) str_parse_uint64_t(String string);
+
 String str_escape(String string); // Converts a string to escaped form (e.g. '\t\r\n' -> '\\t\\r\\n')
 
 // Sorting

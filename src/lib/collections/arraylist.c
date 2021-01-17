@@ -62,7 +62,7 @@ String ArrayList__format(ArrayList list)
     String s = new(String, "ArrayList{");
     if (list->length == 0)
     {
-        str_append(s, '}');
+        str_append(s, "}");
         return s;
     }
     else
@@ -74,7 +74,7 @@ String ArrayList__format(ArrayList list)
         }
     }
     str_pop(s, 2); // Pop the last ', '
-    str_append(s, '}');
+    str_append(s, "}");
     return s;
 }
 

@@ -7,7 +7,7 @@ int main(void)
     
     for iter(StringSplit, it, input, "\n")
     {
-        al_append(code, str_parse_int32(it.value));
+        al_append(code, unwrap(str_parse(int32_t, it.value)));
     }
 
     del(String, input);

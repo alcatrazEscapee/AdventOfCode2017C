@@ -51,10 +51,11 @@ typedef enum { _Err = 0, _Ok = 1 } __Result;
 #define unwrap_default(result) ((result).value)
 
 // Handling both primitive and class variants for unwrap() and unwrap_or()
+// unwrap() creates a stack frame as it may panic(), and it is desired to know the location outside of the unwrap() function
 #define UNROLL_UNWRAP(args...) UNROLL_REFLECT_UNWRAP(args, UNWRAP_GENERIC, UNWRAP_PRIMITIVE) (args)
 #define UNROLL_REFLECT_UNWRAP(args...) ARG_3(args)
-#define UNWRAP_GENERIC(cls, result) ((cls) result_pointer_t_unwrap (result, class(cls)))
-#define UNWRAP_PRIMITIVE(result) RESULT_GENERIC_PREFIX(result, unwrap) (result)
+#define UNWRAP_GENERIC(cls, result) ((cls) result_pointer_t_unwrap (result, class(cls), __create_stack_frame))
+#define UNWRAP_PRIMITIVE(result) RESULT_GENERIC_PREFIX(result, unwrap) (result, __create_stack_frame)
 
 #define UNROLL_UNWRAP_OR(args...) UNROLL_REFLECT_UNWRAP_OR(args, UNWRAP_OR_GENERIC, UNWRAP_OR_PRIMITIVE) (args)
 #define UNROLL_REFLECT_UNWRAP_OR(args...) ARG_4(args)
@@ -64,13 +65,15 @@ typedef enum { _Err = 0, _Ok = 1 } __Result;
 #define declare_result(T) \
 struct CONCAT3(Result_, T, __struct) { __Result type; T value; }; \
 typedef struct CONCAT3(Result_, T, __struct) Result(T); \
-T CONCAT3(result_, T, _unwrap) (Result(T) result); \
+T CONCAT3(result_, T, _unwrap) (Result(T) result, StackFrame frame); \
 T CONCAT3(result_, T, _unwrap_or) (Result(T) result, T value)
 
 #define impl_result(T) \
-T CONCAT3(result_, T, _unwrap) (Result(T) result) \
+T CONCAT3(result_, T, _unwrap) (Result(T) result, StackFrame frame) \
 { \
+    __stack_frame_push(frame); \
     panic_if(is_err(result), "unwrap() called on Result(Err)"); \
+    __stack_frame_pop(); \
     return result.value; \
 } \
 \
@@ -91,7 +94,7 @@ declare_result(uint64_t);
 // pointer_t is different, because it needs to take the Class<T> as a param
 typedef RESULT_STRUCT(pointer_t) Result(pointer_t);
 
-pointer_t CONCAT3(result_, pointer_t, _unwrap) (Result(pointer_t) result, Class cls);
+pointer_t CONCAT3(result_, pointer_t, _unwrap) (Result(pointer_t) result, Class cls, StackFrame frame);
 pointer_t CONCAT3(result_, pointer_t, _unwrap_or) (Result(pointer_t) result, pointer_t value, Class cls);
 
 

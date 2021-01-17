@@ -11,10 +11,12 @@ impl_result(uint64_t);
 
 // Result(pointer_t) needs to have the additional Class<T> param
 
-pointer_t CONCAT3(result_, pointer_t, _unwrap) (Result(pointer_t) result, Class cls)
+pointer_t CONCAT3(result_, pointer_t, _unwrap) (Result(pointer_t) result, Class cls, StackFrame frame)
 {
-    panic_if(is_err(result), "unwrap() called on Result<%s>", cls->name); \
-    return result.value; \
+    __stack_frame_push(frame);
+    panic_if(is_err(result), "unwrap() called on Result<%s>", cls->name);
+    __stack_frame_pop();
+    return result.value;
 }
 
 pointer_t CONCAT3(result_, pointer_t, _unwrap_or) (Result(pointer_t) result, pointer_t value, Class cls)

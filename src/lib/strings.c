@@ -304,7 +304,37 @@ bool str_equals_content(String string, slice_t static_string)
     return false;
 }
 
+bool str_equals_slice(String string, uint32_t start_inclusive, uint32_t end_exclusive, slice_t static_string)
+{
+    panic_if(end_exclusive <= start_inclusive, "Total slice length must be positive: %d <= 0", end_exclusive - start_inclusive);
+    panic_if(end_exclusive > string->length, "Slice must be within range of the string: end_exclusive = %d, and the string has length %d", end_exclusive, string->length);
+    
+    uint32_t slice_len = str_slice_len(static_string);
+    panic_if(slice_len != end_exclusive - start_inclusive, "Slice [%d, %d) must be same length as length of static string (%d)", start_inclusive, end_exclusive, slice_len);
+
+    for (uint32_t i = start_inclusive; i < end_exclusive; i++)
+    {
+        if (static_string[i - start_inclusive] != string->slice[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 // String Manipulations
+
+Result(uint32_t) str_index_of(String string, slice_t any_chars)
+{
+    for iter(String, it, string)
+    {
+        if (str_char_in_chars(any_chars, it.value))
+        {
+            return Ok(uint32_t, it.index);
+        }
+    }
+    return Err(uint32_t);
+}
 
 // Returns a new string which is a substring of this string
 String str_substring(String string, uint32_t start_inclusive, uint32_t end_exclusive)
@@ -328,13 +358,39 @@ String str_substring(String string, uint32_t start_inclusive, uint32_t end_exclu
     }
 }
 
-int32_t str_parse_int32(String string)
+Result(char) str_parse_char(String string)
 {
-    // Wraps the ugly pointer indirection into a single function call
-    int32_t e = 0;
-    sscanf(string->slice, "%d", &e);
-    return e;
+    return string->length > 0 ? Ok(char, string->slice[0]) : Err(char);
 }
+
+Result(bool) str_parse_bool(String string)
+{
+    if (string->length >= 4 && str_equals_slice(string, 0, 4, "true"))
+    {
+        return Ok(bool, true);
+    }
+    else if (string->length >= 5 && str_equals_slice(string, 0, 5, "false"))
+    {
+        return Ok(bool, false);
+    }
+    return Err(bool);
+}
+
+// Generic parsing methods declaration for all integer types
+// This uses the default_format_string() macro defined for primitive types
+#define impl_str_parse_simple(cls) \
+Result(cls) CONCAT(str_parse_, cls) (String string) \
+{ \
+    cls e = default_value(cls); \
+    int32_t ret = sscanf(string->slice, default_format_string(cls), &e); \
+    return ret == 1 ? Ok(cls, e) : Err(cls); \
+}
+
+impl_str_parse_simple(int32_t);
+impl_str_parse_simple(uint32_t);
+impl_str_parse_simple(int64_t);
+impl_str_parse_simple(uint64_t);
+
 
 String str_escape(String string)
 {

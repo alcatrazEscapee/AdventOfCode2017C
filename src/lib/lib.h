@@ -219,6 +219,9 @@ typedef String    (*FnFormat)  (pointer_t);
 // Default value of a class. For primitive types this is the relavant NULL / 0 / '\0', for all classes this is NULL
 #define default_value(cls) CONCAT(__default_value_, typeof(cls)) (cls)
 
+// Default format string of a primitive type.
+#define default_format_string(cls) CONCAT(__default_format_string_, cls)
+
 // Simplifications for compare - only one method is nessecary, but often we just want a simple operator
 #define compare_lt(cls, left, right) (compare(cls, left, right) == -1)
 #define compare_gt(cls, left, right) (compare(cls, left, right) == 1)
@@ -255,6 +258,13 @@ typedef String    (*FnFormat)  (pointer_t);
 #define int64_t__default_value ((int64_t)0)
 #define uint32_t__default_value ((uint32_t)0)
 #define uint64_t__default_value ((uint64_t)0)
+
+#define __default_format_string_char "%c"
+#define __default_format_string_bool "%s"
+#define __default_format_string_int32_t "%d"
+#define __default_format_string_int64_t "%ld"
+#define __default_format_string_uint32_t "%u"
+#define __default_format_string_uint64_t "%lu"
 
 
 // Class Types
@@ -420,43 +430,59 @@ declare_class(Void);
 // Additionally, they make use of the C setjmp / longjmp statements for a single, global error handling context
 // This is used by unit testing, in order to run sandboxed test code that may panic, and recover from it rather than exiting
 
-#define panic(format_string, args...) __panic( \
-    "  at: " FORMAT_BOLD FORMAT_CYAN "panic" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":" LITERAL(__LINE__) FORMAT_RESET "\n" \
-    "  at: " FORMAT_BOLD FORMAT_CYAN "%s" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":?" FORMAT_RESET , \
-    __func__, \
-    NULL, \
-    format_string, ## args)
+#define panic(format_string, args...) __panic("panic", __create_stack_frame, NULL, format_string, ## args)
 
 #define panic_if(condition, format_string, args...) do { \
     if (condition) { \
-        __panic( \
-            "  at " FORMAT_BOLD FORMAT_CYAN "panic_if" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":" LITERAL(__LINE__) FORMAT_RESET "\n" \
-            "  at " FORMAT_BOLD FORMAT_CYAN "%s" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":?" FORMAT_RESET , \
-            __func__, \
-            "Condition " LITERAL(condition) " is false!", \
-            format_string, ## args); \
+        __panic("panic", __create_stack_frame, "Condition " LITERAL(condition) " is false!", format_string, ## args); \
     } \
 } while(0)
 
 #define panic_if_null(pointer, format_string, args...) do { \
     if ((pointer) == NULL) { \
-        __panic( \
-            " at " FORMAT_BOLD FORMAT_CYAN "panic_if_null" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":" LITERAL(__LINE__) FORMAT_RESET "\n" \
-            " at " FORMAT_BOLD FORMAT_CYAN "%s" FORMAT_RESET "(...) from " FORMAT_BOLD FORMAT_WHITE __FILE__ ":?" FORMAT_RESET , \
-            __func__, \
-            "Pointer " LITERAL(pointer) " is NULL!", \
-            format_string, ## args); \
+        __panic("panic", __create_stack_frame, "Pointer " LITERAL(pointer) " is NULL!", format_string, ## args); \
     } \
 } while (0)
 
 
-// Internal function, like exit(), which tries to invoke a panic
-// If the global recovery context is set, uses longjmp to return to there
-void __panic(slice_t panic_string, const char * func_string, slice_t extra_panic_string, slice_t format_string, ...);
-
 // Panic Recovery Global Context
 extern bool    __panic_recovery_active;
 extern jmp_buf __panic_recovery_context;
+
+struct StackFrame__struct {
+    slice_t func;
+    slice_t file;
+    uint32_t line;
+};
+
+typedef struct StackFrame__struct StackFrame;
+
+#define MAX_STACK 16
+
+// Stack Tracing
+extern StackFrame __stack_frame_array[MAX_STACK];
+extern uint32_t   __stack_frame_length;
+extern bool       __panic_invoked;
+
+// Internal function, like exit(), which tries to invoke a panic
+// If the global recovery context is set, uses longjmp to return to there
+void __panic(slice_t panic_func, StackFrame frame_in, slice_t detail_string, slice_t format_string, ...);
+
+// Internal functions for pushing a popping from stack frames
+// Any functions which want to store stack frames for error cases should call these
+// Calling: foo(..., __create_stack_frame);
+// Declaring:
+// foo(..., StackFrame frame)
+// {
+//     __stack_frame_push(frame);
+//     ...
+//     __stack_frame_pop();
+// }
+void __stack_frame_push(StackFrame frame);
+void __stack_frame_pop();
+
+#define __create_stack_frame ((StackFrame) { __func__, __FILE__, __LINE__ })
+
 
 #define try do {\
     __panic_recovery_active = true; \

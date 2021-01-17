@@ -10,7 +10,7 @@ int main(void)
     {
         for iter(StringSplit, word_it, line_it.value, "\t")
         {
-            al_append(array, str_parse_int32(word_it.value));
+            al_append(array, unwrap(str_parse(uint32_t, word_it.value)));
         }
 
         // Part 1 - calculate the difference between max and min in each line
